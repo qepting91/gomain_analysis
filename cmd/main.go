@@ -4,97 +4,216 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
-	"gomain_analysis/internal/crtsh"
-	"gomain_analysis/internal/dns/dns_resolver"
-	"gomain_analysis/internal/dns/reverse_dns"
-	"gomain_analysis/internal/geolocation/geo_lookup"
-	"gomain_analysis/internal/report/pdf_generator"
-	"gomain_analysis/internal/wayback"
-	"gomain_analysis/internal/whois/whois_lookup"
+	"github.com/qepting91/gomain_analysis/internal/config"
+	"github.com/qepting91/gomain_analysis/internal/crt"
+	"github.com/qepting91/gomain_analysis/internal/dns"
+	"github.com/qepting91/gomain_analysis/internal/dork"
+	"github.com/qepting91/gomain_analysis/internal/fetcher"
+	"github.com/qepting91/gomain_analysis/internal/geolocation"
+	"github.com/qepting91/gomain_analysis/internal/parser"
+	"github.com/qepting91/gomain_analysis/internal/report"
+	"github.com/qepting91/gomain_analysis/internal/wayback"
+	"github.com/qepting91/gomain_analysis/internal/whois"
 
 	"github.com/urfave/cli/v2"
 )
 
+// Helper function to format social media links
+func formatSocialMedia(socialMedia map[string][]string) string {
+	var result strings.Builder
+	for platform, links := range socialMedia {
+		fmt.Fprintf(&result, "• %s: %s\n", platform, strings.Join(links, ", "))
+	}
+	return result.String()
+}
+
 func main() {
+	if err := geolite.Initialize(); err != nil {
+		log.Fatal(err)
+	}
+	defer geolite.Close()
+
 	app := &cli.App{
 		Name:  "gomain_analysis",
 		Usage: "Perform OSINT on domains",
 		Commands: []*cli.Command{
 			{
-				Name:  "domain",
-				Usage: "Perform OSINT on a domain",
+				Name:  "analyze",
+				Usage: "Perform comprehensive domain analysis",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:     "domain",
-						Usage:    "Domain to perform OSINT on (e.g., example.com)",
+						Usage:    "Domain to analyze (e.g., example.com)",
 						Required: true,
 					},
 				},
 				Action: func(c *cli.Context) error {
 					domain := c.String("domain")
 
-					fmt.Printf("Fetching SSL/TLS certificates for domain: %s\n", domain)
-					crtsh.FetchCertificates(domain)
+					dnsResolver := dns.NewDNSResolver()
+					webFetcher := fetcher.NewWebFetcher()
 
-					fmt.Printf("\nFetching Wayback Machine snapshots for domain: %s\n", domain)
-					wayback.FetchSnapshots(domain)
-
-					fmt.Printf("\nFetching WHOIS information for domain: %s\n", domain)
-					whoisInfo, err := whois_lookup.LookupWHOIS(domain)
+					// Certificate Analysis
+					fmt.Printf("\nFetching SSL/TLS certificates for %s\n", domain)
+					logs, err := crt.QueryByDomain(domain)
 					if err != nil {
-						log.Printf("Error fetching WHOIS information: %v", err)
-					} else {
-						fmt.Println(whoisInfo)
+						log.Printf("Error fetching certificates: %v", err)
+					}
+					var certDetails []string
+					for _, log := range logs {
+						pemData, err := crt.DownloadPemFile(log.MinCertID)
+						if err != nil {
+							continue
+						}
+						cert, err := crt.ParseCertificate(pemData)
+						if err != nil {
+							continue
+						}
+						certInfo := fmt.Sprintf(`
+Certificate Details:
+ID: %d
+Subject: %s
+Issuer: %s
+Valid From: %s
+Valid To: %s
+DNS Names: %v
+`,
+							log.MinCertID, cert.Subject, cert.Issuer, cert.NotBefore, cert.NotAfter, cert.DNSNames)
+						certDetails = append(certDetails, certInfo)
+						crt.PrintCertDetails(cert)
 					}
 
-					fmt.Printf("\nResolving DNS records for domain: %s\n", domain)
-					dnsRecords, err := dns_resolver.ResolveARecords(domain)
+					// DNS Analysis
+					fmt.Printf("\nResolving DNS records for %s\n", domain)
+					dnsRecords, err := dnsResolver.ResolveARecords(domain)
 					if err != nil {
 						log.Printf("Error resolving DNS records: %v", err)
 					}
-
-					fmt.Printf("\nResolving MX records for domain: %s\n", domain)
-					mxRecords, err := dns_resolver.ResolveMXRecords(domain)
-					if err != nil {
-						log.Printf("Error resolving MX records: %v", err)
+					var dnsInfo []string
+					for _, record := range dnsRecords {
+						dnsInfo = append(dnsInfo, fmt.Sprintf("DNS Record: %s", record))
 					}
 
-					fmt.Printf("\nPerforming reverse DNS lookup for domain: %s\n", domain)
-					reverseDNS, err := reverse_dns.ReverseLookup(dnsRecords[0])
+					// Reverse DNS
+					fmt.Printf("\nPerforming reverse DNS lookup\n")
+					reverseDNS, err := dnsResolver.ReverseLookup(dnsRecords)
 					if err != nil {
-						log.Printf("Error performing reverse DNS lookup: %v", err)
+						log.Printf("Error performing reverse DNS: %v", err)
+					}
+					var reverseDNSInfo []string
+					for ip, domains := range reverseDNS {
+						info := fmt.Sprintf("IP: %s\nAssociated Domains: %v", ip, domains)
+						reverseDNSInfo = append(reverseDNSInfo, info)
 					}
 
-					fmt.Printf("\nFetching geolocation information for domain: %s\n", domain)
-					geoInfo, err := geo_lookup.LookupGeolocation(dnsRecords[0])
+					// WHOIS Information
+					fmt.Printf("\nFetching WHOIS information\n")
+					whoisInfo, err := whois.LookupWHOIS(domain)
 					if err != nil {
-						log.Printf("Error fetching geolocation information: %v", err)
+						log.Printf("Error fetching WHOIS: %v", err)
 					}
 
-					fmt.Printf("\nGenerating PDF report for domain: %s\n", domain)
-					err = pdf_generator.GeneratePDFReport(domain, []string{}, "", fmt.Sprintf("Country: %s, City: %s", geoInfo.Country.Names["en"], geoInfo.City.Names["en"]), dnsRecords, mxRecords, reverseDNS, []string{}, whoisInfo)
+					// Website Content
+					fmt.Printf("\nFetching website content\n")
+					content, err := webFetcher.FetchWebContent("https://" + domain)
+					if err != nil {
+						log.Printf("Error fetching website content: %v", err)
+					}
+
+					// HTML Parsing
+					fmt.Printf("\nParsing HTML content\n")
+					parsedContent, err := parser.ParseHTMLContent(content)
+					if err != nil {
+						log.Printf("Error parsing HTML content: %v", err)
+					}
+					htmlInfo := fmt.Sprintf(`
+Website Analysis
+---------------
+Title: %s
+
+Contact Information:
+• Emails: %v
+• Phone Numbers: %v
+
+Links Analysis:
+• Internal Links Count: %d
+• External Links Count: %d
+
+Social Media Presence:
+%s
+
+Technical Details:
+• Technologies: %v
+• Forms: %v
+• Scripts: %v
+• Stylesheets: %v
+
+Additional Information:
+• Comments: %v
+`,
+						parsedContent.Title,
+						strings.Join(parsedContent.Emails, ", "),
+						strings.Join(parsedContent.PhoneNumbers, ", "),
+						len(parsedContent.InternalLinks),
+						len(parsedContent.ExternalLinks),
+						formatSocialMedia(parsedContent.SocialMedia),
+						strings.Join(parsedContent.Technologies, ", "),
+						strings.Join(parsedContent.Forms, ", "),
+						strings.Join(parsedContent.Scripts, "\n  "),
+						strings.Join(parsedContent.StyleSheets, "\n  "),
+						strings.Join(parsedContent.Comments, "\n  "),
+					)
+
+					// Wayback Machine
+					fmt.Printf("\nFetching Wayback Machine snapshots\n")
+					waybackSnapshots := wayback.FetchSnapshots(domain)
+
+					// Google Dorking
+					fmt.Printf("\nPerforming Google dorking\n")
+					queries, err := dork.LoadDorkQueries()
+					var dorkResults []string
+					if err != nil {
+						log.Printf("Error loading dork queries: %v", err)
+					} else {
+						dorkResults = dork.PerformDorkSearch(domain, queries)
+					}
+
+					// Geolocation
+					var geoLocationInfo string
+					fmt.Printf("\nFetching geolocation information\n")
+					for _, ip := range dnsRecords {
+						geoInfo, err := geolocation.LookupGeolocation(ip)
+						if err != nil {
+							log.Printf("Error getting geolocation for IP %s: %v", ip, err)
+							continue
+						}
+						geoLocationInfo += fmt.Sprintf(`
+IP: %s
+Location Information:
+%s
+`, ip, geolocation.FormatGeoLocation(geoInfo))
+					}
+
+					// Generate PDF Report
+					fmt.Printf("\nGenerating PDF report\n")
+					err = report.GeneratePDFReport(
+						domain,
+						parsedContent.Links,
+						htmlInfo,
+						geoLocationInfo,
+						dnsInfo,
+						certDetails,
+						reverseDNSInfo,
+						waybackSnapshots,
+						whoisInfo,
+						dorkResults,
+					)
 					if err != nil {
 						log.Printf("Error generating PDF report: %v", err)
 					}
 
-					return nil
-				},
-			},
-			{
-				Name:  "archive",
-				Usage: "Archive a URL using Wayback Machine",
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:     "url",
-						Usage:    "URL to archive using Wayback Machine",
-						Required: true,
-					},
-				},
-				Action: func(c *cli.Context) error {
-					url := c.String("url")
-					fmt.Printf("\nArchiving URL using Wayback Machine: %s\n", url)
-					wayback.ArchiveURL(url)
 					return nil
 				},
 			},

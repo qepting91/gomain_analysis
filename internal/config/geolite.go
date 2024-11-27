@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/oschwald/geoip2-golang"
 )
@@ -12,7 +13,8 @@ import (
 var GeoLiteDB *geoip2.Reader
 
 // Initialize loads the GeoLite2 database from the provided file path
-func Initialize(dbPath string) error {
+func Initialize() error {
+	dbPath := filepath.Join("assets", "GeoLite2-City.mmdb")
 	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
 		return fmt.Errorf("GeoLite2 database file not found at %s", dbPath)
 	}

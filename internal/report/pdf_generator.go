@@ -3,13 +3,24 @@ package report
 import (
 	"fmt"
 	"log"
+	"strings"
 
-	"github.com/jung-kurt/gofpdf"
+	"github.com/go-pdf/fpdf"
 )
 
-// GeneratePDFReport generates a PDF report with the given information
-func GeneratePDFReport(domain string, links []string, textContent string, geolocationInfo string, dnsRecords []string, mxRecords []string, reverseDNS []string, waybackSnapshots []string, whoisInfo string) error {
-	pdf := gofpdf.New("P", "mm", "A4", "")
+func GeneratePDFReport(
+	domain string,
+	links []string,
+	htmlInfo string,
+	geolocationInfo string,
+	dnsRecords []string,
+	certDetails []string,
+	reverseDNSInfo []string,
+	waybackSnapshots []string,
+	whoisInfo string,
+	dorkResults []string,
+) error {
+	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.SetTitle(fmt.Sprintf("OSINT Report for %s", domain), false)
 	pdf.AddPage()
 	pdf.SetFont("Arial", "B", 16)
@@ -19,7 +30,7 @@ func GeneratePDFReport(domain string, links []string, textContent string, geoloc
 	pdf.Cell(40, 10, title)
 	pdf.Ln(12)
 
-	// Add WHOIS Information
+	// WHOIS Information
 	pdf.SetFont("Arial", "B", 12)
 	pdf.Cell(40, 10, "WHOIS Information")
 	pdf.Ln(10)
@@ -27,7 +38,7 @@ func GeneratePDFReport(domain string, links []string, textContent string, geoloc
 	pdf.MultiCell(0, 10, whoisInfo, "", "", false)
 	pdf.Ln(10)
 
-	// Add Geolocation Information
+	// Geolocation Information
 	pdf.SetFont("Arial", "B", 12)
 	pdf.Cell(40, 10, "Geolocation Information")
 	pdf.Ln(10)
@@ -35,21 +46,21 @@ func GeneratePDFReport(domain string, links []string, textContent string, geoloc
 	pdf.MultiCell(0, 10, geolocationInfo, "", "", false)
 	pdf.Ln(10)
 
-	// Add Links Section
+	// Certificate Details
 	pdf.SetFont("Arial", "B", 12)
-	pdf.Cell(40, 10, "Extracted Links")
+	pdf.Cell(40, 10, "SSL/TLS Certificates")
 	pdf.Ln(10)
 	pdf.SetFont("Arial", "", 10)
-	if len(links) > 0 {
-		for _, link := range links {
-			pdf.CellFormat(0, 10, link, "", 1, "", false, 0, "")
+	if len(certDetails) > 0 {
+		for _, cert := range certDetails {
+			pdf.MultiCell(0, 10, cert, "", "", false)
 		}
 	} else {
-		pdf.Cell(0, 10, "No links found.")
+		pdf.Cell(0, 10, "No certificate information available.")
 	}
 	pdf.Ln(10)
 
-	// Add DNS Records Section
+	// DNS Records
 	pdf.SetFont("Arial", "B", 12)
 	pdf.Cell(40, 10, "DNS Records")
 	pdf.Ln(10)
@@ -63,45 +74,89 @@ func GeneratePDFReport(domain string, links []string, textContent string, geoloc
 	}
 	pdf.Ln(10)
 
-	// Add MX Records Section
-	pdf.SetFont("Arial", "B", 12)
-	pdf.Cell(40, 10, "MX Records")
-	pdf.Ln(10)
-	pdf.SetFont("Arial", "", 10)
-	if len(mxRecords) > 0 {
-		for _, record := range mxRecords {
-			pdf.CellFormat(0, 10, record, "", 1, "", false, 0, "")
-		}
-	} else {
-		pdf.Cell(0, 10, "No MX records found.")
-	}
-	pdf.Ln(10)
-
-	// Add Reverse DNS Section
+	// Reverse DNS Information
 	pdf.SetFont("Arial", "B", 12)
 	pdf.Cell(40, 10, "Reverse DNS Information")
 	pdf.Ln(10)
 	pdf.SetFont("Arial", "", 10)
-	if len(reverseDNS) > 0 {
-		for _, record := range reverseDNS {
-			pdf.CellFormat(0, 10, record, "", 1, "", false, 0, "")
+	if len(reverseDNSInfo) > 0 {
+		for _, info := range reverseDNSInfo {
+			pdf.MultiCell(0, 10, info, "", "", false)
 		}
 	} else {
 		pdf.Cell(0, 10, "No reverse DNS information found.")
 	}
 	pdf.Ln(10)
 
-	// Add Wayback Machine Snapshots Section
+	// Website Analysis
+	pdf.SetFont("Arial", "B", 12)
+	pdf.Cell(40, 10, "Website Analysis")
+	pdf.Ln(10)
+	pdf.SetFont("Arial", "", 10)
+	pdf.MultiCell(0, 10, htmlInfo, "", "", false)
+	pdf.Ln(10)
+
+	// Links Section
+	pdf.SetFont("Arial", "B", 12)
+	pdf.Cell(40, 10, "Extracted Links")
+	pdf.Ln(10)
+	pdf.SetFont("Arial", "", 10)
+	if len(links) > 0 {
+		for _, link := range links {
+			pdf.CellFormat(0, 10, link, "", 1, "", false, 0, "")
+		}
+	} else {
+		pdf.Cell(0, 10, "No links found.")
+	}
+	pdf.Ln(10)
+
+	// Wayback Machine Snapshots
 	pdf.SetFont("Arial", "B", 12)
 	pdf.Cell(40, 10, "Wayback Machine Snapshots")
 	pdf.Ln(10)
 	pdf.SetFont("Arial", "", 10)
 	if len(waybackSnapshots) > 0 {
 		for _, snapshot := range waybackSnapshots {
-			pdf.CellFormat(0, 10, snapshot, "", 1, "", false, 0, "")
+			// Split the snapshot info to separate URL from other details
+			parts := strings.Split(snapshot, "\nURL: ")
+			pdf.MultiCell(0, 10, parts[0], "", "", false)
+			if len(parts) > 1 {
+				pdf.SetTextColor(0, 0, 255)   // Blue color for links
+				pdf.SetFont("Arial", "U", 10) // Underlined
+				pdf.AddLink()
+				pdf.WriteLinkString(10, parts[1], parts[1])
+				pdf.SetTextColor(0, 0, 0)    // Reset to black
+				pdf.SetFont("Arial", "", 10) // Reset font
+			}
+			pdf.Ln(5)
 		}
 	} else {
 		pdf.Cell(0, 10, "No Wayback Machine snapshots found.")
+	}
+	pdf.Ln(10)
+
+	// Google Dork Results
+	pdf.SetFont("Arial", "B", 12)
+	pdf.Cell(40, 10, "Google Dork Results")
+	pdf.Ln(10)
+	pdf.SetFont("Arial", "", 10)
+	if len(dorkResults) > 0 {
+		for _, result := range dorkResults {
+			// Split the result into query and URL
+			parts := strings.Split(result, "\nURL: ")
+			pdf.MultiCell(0, 10, parts[0], "", "", false)
+			if len(parts) > 1 {
+				pdf.SetTextColor(0, 0, 255)   // Blue color for links
+				pdf.SetFont("Arial", "U", 10) // Underlined
+				pdf.AddLink()
+				pdf.WriteLinkString(10, parts[1], parts[1])
+				pdf.SetTextColor(0, 0, 0)    // Reset to black
+				pdf.SetFont("Arial", "", 10) // Reset font
+			}
+			pdf.Ln(5)
+		}
+	} else {
+		pdf.Cell(0, 10, "No Google dork results found.")
 	}
 	pdf.Ln(10)
 

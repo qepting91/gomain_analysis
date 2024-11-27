@@ -1,5 +1,44 @@
 # gomain_analysis
 
+A powerful Go-based OSINT tool for comprehensive domain analysis and reporting.
+
+## Features
+
+- IP Geolocation using MaxMind's GeoIP2 database
+- Web content extraction and analysis
+- WHOIS information lookup
+- DNS record analysis (A, MX records)
+- Reverse DNS lookups
+- Historical data via Wayback Machine
+- Certificate transparency logs via crt.sh
+- Automated PDF report generation
+
+gomain_analysis/
+├── cmd/                    # Command line interface
+├── internal/
+│   ├── config/            # Configuration management
+│   ├── crt.sh/            # Certificate transparency checks
+│   ├── dns/               # DNS operations
+│   ├── geolocation/       # IP geolocation
+│   ├── parser/            # HTML parsing
+│   ├── report/            # PDF report generation
+│   ├── wayback/           # Wayback Machine integration
+│   └── whois/             # WHOIS lookups
+
+## Dependencies
+github.com/PuerkitoBio/goquery - HTML parsing
+github.com/domainr/whois - WHOIS lookups
+github.com/e-zk/go-crtsh - Certificate transparency
+github.com/go-pdf/fpdf - PDF generation
+github.com/oschwald/geoip2-golang - IP geolocation
+github.com/seekr-osint/wayback-machine-golang - Wayback Machine integration
+github.com/urfave/cli/v2 - CLI interface
+## Prerequisites
+
+Download GeoLite2-City.mmdb database from MaxMind
+Place the database file in your project's asset directory
+
+## Note
 this is a rewrite and improvement upon the github.com/qepting/domain_analysis tool.
 
 The following will be used for the Python to GO transformation:
@@ -82,11 +121,23 @@ Here's the updated modular overview including Go alternatives:
    - **Python**: `wayback`
    - **Go**: Implement using `net/http` to interact with the Wayback Machine API.
 
-8. **`oxdork/oxdork.go`**:
+8. **`dork/dork.go`**:
    - **Python**: Execute `oxdork` using `subprocess`.
-   - **Go**: Use `os/exec` to execute `oxdork` or write equivalent dorking functions in Go.
+   - **Go**: Use `os/exec` to execute `Google Dorking` or write equivalent dorking functions in Go.
 
 9. **`report/pdf_generator.go`**:
    - **Python**: `reportlab`
    - **Go**: Use `go-pdf/fpdf`.
+
+## Generated Report Contents
+The tool generates a comprehensive PDF report including:
+
+- WHOIS Information
+- Geolocation Data
+- Extracted Links
+- DNS Records
+- MX Records
+- Reverse DNS Information
+- Historical Wayback Machine Snapshots
+- Project Structure
 

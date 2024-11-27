@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 )
 
-// LoadDorkQueries loads Google dork queries from a given file
+// LoadDorkQueries loads Google dork queries from queries.txt
 func LoadDorkQueries() ([]string, error) {
 	file, err := os.Open("queries/queries.txt")
 	if err != nil {
@@ -31,29 +32,37 @@ func LoadDorkQueries() ([]string, error) {
 	return queries, nil
 }
 
-// PerformDorkSearch performs a Google dork search for each query and prints the results
-func PerformDorkSearch(domain string, queries []string) {
+// PerformDorkSearch performs a Google dork search for each query
+func PerformDorkSearch(domain string, queries []string) []string {
 	client := &http.Client{}
+	var results []string
 
 	for _, query := range queries {
-		searchURL := fmt.Sprintf("https://www.google.com/search?q=%s", strings.Replace(query, "{domain}", domain, -1))
+		// Replace the domain placeholder with actual domain
+		processedQuery := strings.Replace(query, "{domain}", domain, -1)
+		// URL encode the processed query
+		encodedQuery := url.QueryEscape(processedQuery)
+		searchURL := fmt.Sprintf("https://www.google.com/search?q=%s", encodedQuery)
+
 		req, err := http.NewRequest("GET", searchURL, nil)
 		if err != nil {
-			log.Printf("Error creating request for query %s: %v", query, err)
+			results = append(results, fmt.Sprintf("Query: %s - Error: %v", query, err))
 			continue
 		}
 
+		// Add User-Agent header to mimic browser behavior
+		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+
 		resp, err := client.Do(req)
 		if err != nil {
-			log.Printf("Error performing dork search for query %s: %v", query, err)
+			results = append(results, fmt.Sprintf("Query: %s - Error: %v", query, err))
 			continue
 		}
 		defer resp.Body.Close()
 
-		if resp.StatusCode == http.StatusOK {
-			log.Printf("Successfully performed dork search for query: %s", query)
-		} else {
-			log.Printf("Failed to perform dork search for query: %s, Status code: %d", query, resp.StatusCode)
-		}
+		results = append(results, fmt.Sprintf("Query: %s\nURL: %s", processedQuery, searchURL))
+
 	}
+
+	return results
 }

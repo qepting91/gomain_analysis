@@ -8,28 +8,23 @@ import (
 	"github.com/seekr-osint/wayback-machine-golang/wayback"
 )
 
-// FetchSnapshots retrieves a list of available snapshots for a given domain using the Wayback Machine API
-func FetchSnapshots(domain string) {
+// FetchSnapshots retrieves available snapshots and returns them as formatted strings
+func FetchSnapshots(domain string) []string {
 	client := &http.Client{}
 	snapshots, err := wayback.GetSnapshotData("https://"+domain, client)
 	if err != nil {
 		log.Printf("Error fetching snapshots for domain %s: %v", domain, err)
-		return
+		return nil
 	}
 
-	for _, snapshot := range snapshots {
-		fmt.Printf("Snapshot URL: %s, Timestamp: %s\n", snapshot.URL, snapshot.Timestamp)
-	}
-}
-
-// ArchiveURL archives the given URL using the Wayback Machine
-func ArchiveURL(url string) {
-	client := &http.Client{}
-	archivedURL, err := wayback.Archive(url, client)
-	if err != nil {
-		log.Printf("Error archiving URL %s: %v", url, err)
-		return
+	var results []string
+	if snapshots.ArchivedSnapshots.Closest.Available {
+		snapshotInfo := fmt.Sprintf("URL: %s\nTimestamp: %s\nStatus: %s",
+			snapshots.ArchivedSnapshots.Closest.URL,
+			snapshots.ArchivedSnapshots.Closest.Timestamp,
+			snapshots.ArchivedSnapshots.Closest.Status)
+		results = append(results, snapshotInfo)
 	}
 
-	fmt.Printf("Archived URL: %s\n", archivedURL)
+	return results
 }
