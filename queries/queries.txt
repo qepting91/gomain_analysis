@@ -1,0 +1,49 @@
+site:{domain}
+inurl:{domain} filetype:pdf
+site:{domain} intext:password
+site:{domain} intitle:"index of"
+site:{domain} inurl:admin
+site:{domain} inurl:login
+site:{domain} ext:xml | ext:conf | ext:cnf | ext:reg | ext:inf | ext:rdp | ext:cfg | ext:txt | ext:ora | ext:ini
+site:{domain} inurl:wp-content
+site:{domain} inurl:phpinfo
+site:{domain} "powered by"
+site:{domain} intext:"confidential"
+site:{domain} intext:"ssn" | intext:"social security number"
+site:{domain} ext:log intext:"error"
+site:{domain} inurl:backup | inurl:bak
+site:{domain} intext:"credentials" | intext:"username" | intext:"password"
+site:{domain} ext:env "DB_PASSWORD"
+site:{domain} inurl:swagger | inurl:api-docs
+site:{domain} inurl:debug
+site:{domain} intext:"API key" | intext:"apikey"
+site:{domain} ext:json intext:"key"
+site:{domain} filetype:yaml | filetype:yml intext:"password"
+site:{domain} ext:sql | ext:db | ext:sqlite
+site:{domain} ext:bak | ext:old | ext:backup
+site:{domain} inurl:config | intext:"db_password"
+site:{domain} inurl:admin | inurl:dashboard
+site:{domain} inurl:login | inurl:signin | inurl:auth
+site:{domain} "admin login"
+site:{domain} "restricted access"
+site:{domain} intitle:"index of /private"
+site:{domain} intitle:"index of /confidential"
+site:{domain} intitle:"index of /backup"
+site:{domain} inurl:wp-admin | inurl:wp-login
+site:{domain} inurl:joomla | inurl:com_content
+site:{domain} "Drupal" inurl:node
+site:{domain} inurl:"/vendor/phpunit/"
+site:{domain} inurl:logs | inurl:logfile
+site:{domain} inurl:private | inurl:secure
+site:{domain} filetype:log
+site:{domain} inurl:uploads | inurl:user_uploads
+site:{domain} inurl:api | inurl:graphql
+site:{domain} inurl:git | inurl:.git
+site:{domain} ext:json "swagger"
+site:{domain} filetype:md README
+site:{domain} intext:"PHP Warning" | intext:"PHP Error"
+site:{domain} intext:"Index of /" inurl:error
+site:{domain} intext:"Stack trace" | intext:"Fatal error"
+site:{domain} intext:"AWS_ACCESS_KEY_ID" | intext:"AWS_SECRET_ACCESS_KEY"
+site:{domain} filetype:xls | filetype:xlsx intext:"password"
+site:{domain} inurl:secrets | inurl:credentials
