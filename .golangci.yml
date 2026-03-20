@@ -1,0 +1,63 @@
+# golangci-lint configuration
+# https://golangci-lint.run/usage/configuration/
+run:
+  timeout: 5m
+  go: "1.23"
+
+linters:
+  enable:
+    # Default linters
+    - govet          # Go team's vet tool — reports suspicious constructs
+    - staticcheck    # Advanced static analysis
+    - errcheck       # Ensures error return values are checked
+    - ineffassign    # Detects useless variable assignments
+    - unused         # Finds unused code
+    - gosimple       # Suggests simpler code constructions
+
+    # Security
+    - gosec          # Security-focused linter (hardcoded creds, weak crypto, etc.)
+
+    # Bug detection
+    - bodyclose      # Checks whether HTTP response body is closed
+    - gocritic       # Opinionated Go linter with 100+ checks
+    - nilerr         # Finds code that returns nil even if error is not nil
+    - exportloopref  # Detects pointers to enclosing loop variables
+
+    # Style & maintainability
+    - gofmt          # Checks whether code is gofmt-ed
+    - goimports      # Checks import ordering and formatting
+    - misspell       # Finds commonly misspelled English words in comments
+
+linters-settings:
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment  # Too noisy for initial adoption
+
+  gosec:
+    severity: medium
+    confidence: medium
+    excludes:
+      - G104  # Unhandled errors — covered by errcheck
+      - G304  # File path from variable — expected for OSINT tools
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+    disabled-checks:
+      - hugeParam  # Too strict for initial adoption
+
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+
+issues:
+  # Maximum issues count per one linter (0 = unlimited)
+  max-issues-per-linter: 50
+  # Maximum count of issues with the same text (0 = unlimited)
+  max-same-issues: 3
+  # Show only new issues created after git revision
+  # Uncomment below to only flag new issues (useful during adoption)
+  # new: true

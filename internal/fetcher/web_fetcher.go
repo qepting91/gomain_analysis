@@ -2,7 +2,7 @@ package fetcher
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 )
@@ -41,7 +41,7 @@ func (w *WebFetcher) FetchWebContent(url string) (string, error) {
 		return "", fmt.Errorf("failed to fetch content from %s, status code: %d", url, resp.StatusCode)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("failed to read response body from %s: %v", url, err)
 	}

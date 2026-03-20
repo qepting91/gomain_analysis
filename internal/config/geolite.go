@@ -37,16 +37,3 @@ func Close() {
 	}
 }
 
-// LookupIP takes an IP address and returns geolocation information
-func LookupIP(ip string) (*geoip2.City, error) {
-	if GeoLiteDB == nil {
-		return nil, fmt.Errorf("GeoLite2 database is not initialized")
-	}
-
-	record, err := GeoLiteDB.City([]byte(ip))
-	if err != nil {
-		return nil, fmt.Errorf("failed to lookup IP: %v", err)
-	}
-
-	return record, nil
-}

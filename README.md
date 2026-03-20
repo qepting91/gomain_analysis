@@ -1,143 +1,122 @@
 # gomain_analysis
 
-A powerful Go-based OSINT tool for comprehensive domain analysis and reporting.
+A powerful, fast, and comprehensive Go-based Cyber Threat Intelligence (CTI) OSINT tool for domain analysis and reporting. 
+
+Unlike traditional scripts, `gomain_analysis` aggregates live infrastructure data, historical records, and web presence into fully structured **Raw JSON feeds** for SIEM ingestion, alongside easily digestible, presentation-ready **PDF Reports**.
 
 ## Features
 
-- IP Geolocation using MaxMind's GeoIP2 database
-- Web content extraction and analysis
-- WHOIS information lookup
-- DNS record analysis (A, MX records)
-- Reverse DNS lookups
-- Historical data via Wayback Machine
-- Certificate transparency logs via crt.sh
-- Automated PDF report generation
+- **Infrastructure & DNS**: Resolves A, AAAA, MX records, and performs Reverse DNS lookups.
+- **Passive Subdomain Enumeration**: Integrates `projectdiscovery/subfinder` to stealthily scrape hundreds of subdomains from APIs without alerting the target.
+- **SSL/TLS Certificate Inspection**: Dual-layer hybrid approach. Instantly pulls the live certificate chain via direct TLS handshake, with a secondary fallback to Certificate Transparency (CT) logs (`crt.sh`).
+- **Threat Intelligence & Reputation**: Connects to the **VirusTotal API** to check the domain and resolved IPs for malicious, phishing, or C2 tags.
+- **Credential Breach Checks**: Automatically validates extracted employee/target emails against the **HaveIBeenPwned API** to reveal brute-force or credential stuffing vectors.
+- **IP Geolocation**: Uses MaxMind's GeoIP2 database for accurate target mapping.
+- **Web Content Analysis**: Extracts titles, emails, phone numbers, technologies, exposed forms, internal/external links, and social media presence.
+- **Historical Data**: Retrieves archived snapshots and proactively triggers active captures via the Wayback Machine.
+- **Google Dorking**: Automatically generates targeted dork queries for the domain.
+- **WHOIS Lookups**: Fetches registrar and ownership information.
+- **Dual Reporting Engine**: Outputs a cleanly formatted, executive-style PDF summary and a fully structured `_raw.json` file for automation and graphing (Neo4j, Maltego, Splunk).
 
-gomain_analysis/
-├── cmd/                    # Command line interface
-├── internal/
-│   ├── config/            # Configuration management
-│   ├── crt.sh/            # Certificate transparency checks
-│   ├── dns/               # DNS operations
-│   ├── geolocation/       # IP geolocation
-│   ├── parser/            # HTML parsing
-│   ├── report/            # PDF report generation
-│   ├── wayback/           # Wayback Machine integration
-│   └── whois/             # WHOIS lookups
+---
 
-## Dependencies
-github.com/PuerkitoBio/goquery - HTML parsing
-github.com/domainr/whois - WHOIS lookups
-github.com/e-zk/go-crtsh - Certificate transparency
-github.com/go-pdf/fpdf - PDF generation
-github.com/oschwald/geoip2-golang - IP geolocation
-github.com/seekr-osint/wayback-machine-golang - Wayback Machine integration
-github.com/urfave/cli/v2 - CLI interface
 ## Prerequisites
 
-Download GeoLite2-City.mmdb database from MaxMind
-Place the database file in your project's asset directory
+### 1. Go Runtime
+Ensure you have Go 1.23+ installed.
 
-## Note
-this is a rewrite and improvement upon the github.com/qepting/domain_analysis tool.
+### 2. MaxMind GeoLite2 Database
+This tool requires the free MaxMind GeoLite2-City database for IP geolocation.
 
-The following will be used for the Python to GO transformation:
+1. Download the `GeoLite2-City.mmdb` database. You can get it directly from [MaxMind](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data) or via a free CDN mirror:
+   ```bash
+   wget https://cdn.jsdelivr.net/npm/geolite2-city/GeoLite2-City.mmdb.gz
+   gunzip GeoLite2-City.mmdb.gz
+   ```
+2. Place the decompressed `GeoLite2-City.mmdb` file in the `assets/` directory at the root of this project:
+   ```text
+   gomain_analysis/
+   ├── assets/
+   │   └── GeoLite2-City.mmdb
+   ```
+*(Note: If the database is missing, the tool will gracefully skip geolocation and continue the rest of the analysis).*
 
-### Python Tool Mapping & Go Alternatives
+---
 
-#### 1. `GeoLiteCity.dat` (IP Geolocation)
-- **Python Tool**: `pygeoip`
-- **Go Alternative**: Use [MaxMind's GeoIP2 Go library](https://github.com/oschwald/geoip2-golang).
-  - **Note**: This library will allow us to use the `.mmdb` version of the GeoLite database. You’ll need to download the latest version (`GeoLite2-City.mmdb`) and use the `geoip2-golang` library for IP lookups.
+## Installation & Build
 
-#### 2. **Fetching Web Content** (`requests`, `urllib`)
-- **Python Tool**: `requests`, `urllib`
-- **Go Alternative**: Use Go's built-in `net/http` package for making HTTP requests.
-  - **Reproduction**: `http.Get(url)` can be used for fetching content. This is very straightforward to replicate in Go using `net/http`.
+Clone the repository and build the binary:
 
-#### 3. **HTML Parsing** (`BeautifulSoup`)
-- **Python Tool**: `BeautifulSoup` from `bs4`
-- **Go Alternative**: Use [PuerkitoBio's `goquery`](https://github.com/PuerkitoBio/goquery), which is similar in functionality to BeautifulSoup.
-  - **Reproduction**: `goquery` provides functions to parse HTML and traverse/manipulate the document, making it a close match to `BeautifulSoup`.
+```bash
+git clone https://github.com/qepting91/gomain_analysis.git
+cd gomain_analysis
+go build -o gomain_analysis ./cmd/
+```
 
-#### 4. **WHOIS Lookup** (`whois`)
-- **Python Tool**: `whois`
-- **Go Alternative**: Use [domainr/whois](https://github.com/domainr/whois) or [likexian/whois-go](https://github.com/likexian/whois-go).
-  - **Reproduction**: These libraries allow performing WHOIS lookups on domains, similar to the Python `whois` package.
+Alternatively, you can run the tool via Docker:
+```bash
+docker build -t gomain_analysis .
+docker run --rm -v $(pwd)/assets:/app/assets gomain_analysis analyze --domain example.com
+```
 
-#### 5. **DNS Resolution** (`dns.resolver`)
-- **Python Tool**: `dnspython` library (`dns.resolver`)
-- **Go Alternative**: Use Go’s built-in `net` package or a DNS library like [miekg/dns](https://github.com/miekg/dns).
-  - **Reproduction**: The `net` package has `LookupHost` and `LookupMX` functions to get A and MX records, respectively. For more complex DNS queries, the `miekg/dns` library can be used.
+---
 
-#### 6. **Reverse DNS Lookup** (`dns.reversename`)
-- **Python Tool**: `dnspython` library (`dns.reversename`)
-- **Go Alternative**: Use Go's built-in `net` package, specifically `net.LookupAddr`.
-  - **Reproduction**: `net.LookupAddr(ip)` can be used to perform reverse DNS lookups, similar to the Python implementation.
+## Usage
 
-#### 7. **Wayback Machine Integration** (`wayback` library)
-- **Python Tool**: `wayback` Python package for fetching Wayback Machine snapshots.
-- **Go Alternative**: No direct equivalent, but you can use simple HTTP GET requests to the Wayback Machine API.
-  - **Reproduction**: Write a function in Go to perform requests to the Wayback Machine API (`http://archive.org/wayback/available?url={URL}`) and parse the response. JSON parsing is straightforward in Go using the `encoding/json` package.
+Run the `analyze` command and provide the target domain:
 
-#### 8. **Google Dorking (`oxdork`)**
-- **Python Tool**: `subprocess.run` to execute `oxdork` for Google dorking.
-- **Go Alternative**: Execute commands using Go's `os/exec` package.
-  - **Reproduction**: You can still execute external tools using `os/exec`. Alternatively, consider using a built-in library or writing Go code to simulate `oxdork` functionality (e.g., using the `net/http` package to craft Google queries).
+```bash
+# Using the built binary
+./gomain_analysis analyze --domain samtechautomated.com
 
-#### 9. **PDF Generation** (`reportlab`)
-- **Python Tool**: `reportlab` for creating PDF reports.
-- **Go Alternative**: Use [jung-kurt/gofpdf](https://github.com/jung-kurt/gofpdf) (archived, but still useful) or [go-pdf/fpdf](https://github.com/go-pdf/fpdf) for PDF generation.
-  - **Reproduction**: The `gofpdf` package provides methods to create and customize PDF documents similarly to ReportLab. You can use it to generate headers, paragraphs, and tables.
+# Or running directly via Go
+go run ./cmd/ analyze --domain samtechautomated.com
+```
 
-### Final Module Mapping Overview
-Here's the updated modular overview including Go alternatives:
+### API Key Configuration (Optional)
+To unlock the passive advanced Threat Intelligence capabilities (VirusTotal and HaveIBeenPwned), simply export your API keys in your terminal environment before running the tool. If you do not have these keys, the tool will gracefully skip these checks while `subfinder` and the rest of the OSINT modules continue.
 
-1. **`config/geolite.go`**:
-   - **Python**: `pygeoip`
-   - **Go**: Use `geoip2-golang` with MaxMind `.mmdb` files.
+```bash
+export VT_API_KEY="your_virustotal_api_key_here"
+export HIBP_API_KEY="your_haveibeenpwned_api_key_here"
 
-2. **`fetcher/web_fetcher.go`**:
-   - **Python**: `requests`, `urllib`
-   - **Go**: Use `net/http`.
+./gomain_analysis analyze --domain samtechautomated.com
+```
 
-3. **`parser/html_parser.go`**:
-   - **Python**: `BeautifulSoup`
-   - **Go**: Use `goquery`.
+### Outputs
 
-4. **`whois/whois_lookup.go`**:
-   - **Python**: `whois`
-   - **Go**: Use `likexian/whois-go`.
+Upon successful execution, the tool will generate two files in your current directory:
 
-5. **`dns/dns_resolver.go` & `reverse_dns.go`**:
-   - **Python**: `dnspython`
-   - **Go**: Use `net` package (`LookupHost`, `LookupMX`, `LookupAddr`) or `miekg/dns` for advanced features.
+1. **`{domain}_report.pdf`**: A professional, paginated PDF report with tables, structured data, and click-able links. Ideal for sharing with stakeholders or including in penetration test reports.
+2. **`{domain}_raw.json`**: A machine-readable JSON structure containing all findings, perfect for programmatic ingestion into SIEMs or threat intelligence platforms.
 
-6. **`geolocation/geo_lookup.go`**:
-   - **Python**: `pygeoip`
-   - **Go**: Use `geoip2-golang`.
+---
 
-7. **`wayback/wayback_fetcher.go`**:
-   - **Python**: `wayback`
-   - **Go**: Implement using `net/http` to interact with the Wayback Machine API.
+## Project Structure
 
-8. **`dork/dork.go`**:
-   - **Python**: Execute `oxdork` using `subprocess`.
-   - **Go**: Use `os/exec` to execute `Google Dorking` or write equivalent dorking functions in Go.
+```text
+gomain_analysis/
+├── cmd/                 # CLI entrypoint (main.go)
+├── internal/
+│   ├── config/          # Configurations and GeoLite2 initialization
+│   ├── crt/             # Hybrid Live TLS & CT Log inspection
+│   ├── dns/             # DNS and Reverse DNS operations
+│   ├── dork/            # Automated Google dork query generation
+│   ├── fetcher/         # HTTP content retrieval
+│   ├── geolocation/     # IP location parsing
+│   ├── parser/          # HTML parsing and extraction
+│   ├── report/          # PDF and JSON generation engines
+│   ├── wayback/         # Wayback Machine integration
+│   └── whois/           # WHOIS lookups
+├── queries/
+│   └── queries.txt      # List of dork templates
+└── assets/              # Place GeoLite2-City.mmdb here
+```
 
-9. **`report/pdf_generator.go`**:
-   - **Python**: `reportlab`
-   - **Go**: Use `go-pdf/fpdf`.
+## Development & CI/CD
 
-## Generated Report Contents
-The tool generates a comprehensive PDF report including:
-
-- WHOIS Information
-- Geolocation Data
-- Extracted Links
-- DNS Records
-- MX Records
-- Reverse DNS Information
-- Historical Wayback Machine Snapshots
-- Project Structure
-
+This project uses **GitHub Actions** for continuous integration. Every push and pull request goes through a strict 4-stage pipeline:
+1. **Linting**: `golangci-lint` with 15 active linters enforcing code quality.
+2. **Testing**: `go test` with race condition detection and code coverage.
+3. **Security**: `govulncheck` and `gosec` for vulnerability scanning.
+4. **Build**: Verification of successful cross-platform compilation.

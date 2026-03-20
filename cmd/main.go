@@ -5,7 +5,9 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/qepting91/gomain_analysis/internal/breach"
 	"github.com/qepting91/gomain_analysis/internal/config"
 	"github.com/qepting91/gomain_analysis/internal/crt"
 	"github.com/qepting91/gomain_analysis/internal/dns"
@@ -14,6 +16,8 @@ import (
 	"github.com/qepting91/gomain_analysis/internal/geolocation"
 	"github.com/qepting91/gomain_analysis/internal/parser"
 	"github.com/qepting91/gomain_analysis/internal/report"
+	"github.com/qepting91/gomain_analysis/internal/reputation"
+	"github.com/qepting91/gomain_analysis/internal/subfinder"
 	"github.com/qepting91/gomain_analysis/internal/wayback"
 	"github.com/qepting91/gomain_analysis/internal/whois"
 
@@ -31,7 +35,7 @@ func formatSocialMedia(socialMedia map[string][]string) string {
 
 func main() {
 	if err := geolite.Initialize(); err != nil {
-		log.Fatal(err)
+		log.Printf("WARNING: GeoLite2 initialization failed (geolocation will be skipped): %v", err)
 	}
 	defer geolite.Close()
 
@@ -55,34 +59,56 @@ func main() {
 					dnsResolver := dns.NewDNSResolver()
 					webFetcher := fetcher.NewWebFetcher()
 
-					// Certificate Analysis
-					fmt.Printf("\nFetching SSL/TLS certificates for %s\n", domain)
-					logs, err := crt.QueryByDomain(domain)
-					if err != nil {
-						log.Printf("Error fetching certificates: %v", err)
+					reportData := &report.ReportData{
+						Domain:        domain,
+						ScanTimestamp: time.Now(),
+						ReverseDNS:    make(map[string][]string),
 					}
-					var certDetails []string
-					for _, log := range logs {
-						pemData, err := crt.DownloadPemFile(log.MinCertID)
-						if err != nil {
-							continue
+
+					// Live Certificate Analysis
+					fmt.Printf("\nInspecting Live SSL/TLS certificates for %s\n", domain)
+					liveCerts, err := crt.InspectTLS(domain, "443")
+					if err != nil {
+						log.Printf("Error inspecting live TLS: %v", err)
+					} else {
+						for _, cert := range liveCerts {
+							reportData.Certificates = append(reportData.Certificates, report.CertData{
+								Source:    "LIVE",
+								Subject:   cert.Subject.String(),
+								Issuer:    cert.Issuer.String(),
+								ValidFrom: cert.NotBefore,
+								ValidTo:   cert.NotAfter,
+								DNSNames:  cert.DNSNames,
+							})
+							crt.PrintCertDetails(cert)
 						}
-						cert, err := crt.ParseCertificate(pemData)
-						if err != nil {
-							continue
+					}
+
+					// Historical Certificate Analysis (CT Logs)
+					fmt.Printf("\nFetching Historical CT logs for %s from crt.sh\n", domain)
+					logsArray, err := crt.QueryByDomain(domain)
+					if err != nil {
+						log.Printf("Error fetching historical certificates: %v", err)
+					} else {
+						for _, logEntry := range logsArray {
+							pemData, err := crt.DownloadPemFile(logEntry.MinCertID)
+							if err != nil {
+								continue
+							}
+							cert, err := crt.ParseCertificate(pemData)
+							if err != nil {
+								continue
+							}
+							reportData.Certificates = append(reportData.Certificates, report.CertData{
+								Source:    "CT LOG",
+								ID:        logEntry.MinCertID,
+								Subject:   cert.Subject.String(),
+								Issuer:    cert.Issuer.String(),
+								ValidFrom: cert.NotBefore,
+								ValidTo:   cert.NotAfter,
+								DNSNames:  cert.DNSNames,
+							})
 						}
-						certInfo := fmt.Sprintf(`
-Certificate Details:
-ID: %d
-Subject: %s
-Issuer: %s
-Valid From: %s
-Valid To: %s
-DNS Names: %v
-`,
-							log.MinCertID, cert.Subject, cert.Issuer, cert.NotBefore, cert.NotAfter, cert.DNSNames)
-						certDetails = append(certDetails, certInfo)
-						crt.PrintCertDetails(cert)
 					}
 
 					// DNS Analysis
@@ -91,10 +117,7 @@ DNS Names: %v
 					if err != nil {
 						log.Printf("Error resolving DNS records: %v", err)
 					}
-					var dnsInfo []string
-					for _, record := range dnsRecords {
-						dnsInfo = append(dnsInfo, fmt.Sprintf("DNS Record: %s", record))
-					}
+					reportData.DNSRecords = dnsRecords
 
 					// Reverse DNS
 					fmt.Printf("\nPerforming reverse DNS lookup\n")
@@ -102,11 +125,7 @@ DNS Names: %v
 					if err != nil {
 						log.Printf("Error performing reverse DNS: %v", err)
 					}
-					var reverseDNSInfo []string
-					for ip, domains := range reverseDNS {
-						info := fmt.Sprintf("IP: %s\nAssociated Domains: %v", ip, domains)
-						reverseDNSInfo = append(reverseDNSInfo, info)
-					}
+					reportData.ReverseDNS = reverseDNS
 
 					// WHOIS Information
 					fmt.Printf("\nFetching WHOIS information\n")
@@ -114,6 +133,7 @@ DNS Names: %v
 					if err != nil {
 						log.Printf("Error fetching WHOIS: %v", err)
 					}
+					reportData.WHOIS = whoisInfo
 
 					// Website Content
 					fmt.Printf("\nFetching website content\n")
@@ -127,61 +147,59 @@ DNS Names: %v
 					parsedContent, err := parser.ParseHTMLContent(content)
 					if err != nil {
 						log.Printf("Error parsing HTML content: %v", err)
+					} else {
+						reportData.WebAnalysis = &report.WebData{
+							Title:         parsedContent.Title,
+							MetaTags:      parsedContent.MetaTags,
+							Links:         parsedContent.Links,
+							ExternalLinks: parsedContent.ExternalLinks,
+							InternalLinks: parsedContent.InternalLinks,
+							Emails:        parsedContent.Emails,
+							PhoneNumbers:  parsedContent.PhoneNumbers,
+							SocialMedia:   parsedContent.SocialMedia,
+							Technologies:  parsedContent.Technologies,
+							Scripts:       parsedContent.Scripts,
+							StyleSheets:   parsedContent.StyleSheets,
+							Forms:         parsedContent.Forms,
+							Comments:      parsedContent.Comments,
+						}
 					}
-					htmlInfo := fmt.Sprintf(`
-Website Analysis
----------------
-Title: %s
-
-Contact Information:
-• Emails: %v
-• Phone Numbers: %v
-
-Links Analysis:
-• Internal Links Count: %d
-• External Links Count: %d
-
-Social Media Presence:
-%s
-
-Technical Details:
-• Technologies: %v
-• Forms: %v
-• Scripts: %v
-• Stylesheets: %v
-
-Additional Information:
-• Comments: %v
-`,
-						parsedContent.Title,
-						strings.Join(parsedContent.Emails, ", "),
-						strings.Join(parsedContent.PhoneNumbers, ", "),
-						len(parsedContent.InternalLinks),
-						len(parsedContent.ExternalLinks),
-						formatSocialMedia(parsedContent.SocialMedia),
-						strings.Join(parsedContent.Technologies, ", "),
-						strings.Join(parsedContent.Forms, ", "),
-						strings.Join(parsedContent.Scripts, "\n  "),
-						strings.Join(parsedContent.StyleSheets, "\n  "),
-						strings.Join(parsedContent.Comments, "\n  "),
-					)
 
 					// Wayback Machine
 					fmt.Printf("\nFetching Wayback Machine snapshots\n")
-					waybackSnapshots := wayback.FetchSnapshots(domain)
+					waybackSnaps := wayback.FetchSnapshots(domain)
+					for _, snapStr := range waybackSnaps {
+						parts := strings.Split(snapStr, "\nURL: ")
+						if len(parts) == 2 {
+							// Ex: "[20260320] Status 200"
+							statusPart := parts[0]
+							reportData.WaybackSnapshots = append(reportData.WaybackSnapshots, report.WaybackSnapshot{
+								Timestamp: statusPart,
+								URL:       parts[1],
+								Status:    "Archived",
+							})
+						}
+					}
 
 					// Google Dorking
 					fmt.Printf("\nPerforming Google dorking\n")
 					queries, err := dork.LoadDorkQueries()
-					var dorkResults []string
 					if err != nil {
 						log.Printf("Error loading dork queries: %v", err)
 					} else {
-						dorkResults = dork.PerformDorkSearch(domain, queries)
+						dorkRes := dork.PerformDorkSearch(domain, queries)
+						for _, resStr := range dorkRes {
+							parts := strings.Split(resStr, "\nURL: ")
+							if len(parts) == 2 {
+								reportData.Dorks = append(reportData.Dorks, report.DorkResult{
+									Query: parts[0],
+									URL:   parts[1],
+								})
+							}
+						}
 					}
 
 					// Geolocation
-					var geoLocationInfo string
 					fmt.Printf("\nFetching geolocation information\n")
 					for _, ip := range dnsRecords {
 						geoInfo, err := geolocation.LookupGeolocation(ip)
@@ -189,29 +207,51 @@ Additional Information:
 							log.Printf("Error getting geolocation for IP %s: %v", ip, err)
 							continue
 						}
-						geoLocationInfo += fmt.Sprintf(`
-IP: %s
-Location Information:
-%s
-`, ip, geolocation.FormatGeoLocation(geoInfo))
+						
+						geo := report.GeoData{
+							IP:          ip,
+							City:        geoInfo.City.Names["en"],
+							Country:     geoInfo.Country.Names["en"],
+							CountryCode: geoInfo.Country.IsoCode,
+							Continent:   geoInfo.Continent.Names["en"],
+							Latitude:    geoInfo.Location.Latitude,
+							Longitude:   geoInfo.Location.Longitude,
+							Timezone:    geoInfo.Location.TimeZone,
+						}
+						if len(geoInfo.Subdivisions) > 0 {
+							geo.Region = geoInfo.Subdivisions[0].Names["en"]
+						}
+						reportData.Geolocation = append(reportData.Geolocation, geo)
+					}
+
+					// Passive OSINT Enhancements (Subfinder, VirusTotal, HIBP)
+					fmt.Printf("\nExecuting passive subdomain enumeration (Subfinder)\n")
+					reportData.Subdomains = subfinder.Enumerate(domain)
+
+					fmt.Printf("\nQuerying VirusTotal community reputation database\n")
+					vtResult := reputation.CheckDomain(domain)
+					if vtResult != nil {
+						reportData.MaliciousScore = vtResult.Malicious
+						reportData.VT_Tags = vtResult.Tags
+					}
+
+					if reportData.WebAnalysis != nil && len(reportData.WebAnalysis.Emails) > 0 {
+						fmt.Printf("\nChecking %d extracted emails against HaveIBeenPwned database\n", len(reportData.WebAnalysis.Emails))
+						reportData.BreachedEmails = breach.CheckEmails(reportData.WebAnalysis.Emails)
 					}
 
 					// Generate PDF Report
 					fmt.Printf("\nGenerating PDF report\n")
-					err = report.GeneratePDFReport(
-						domain,
-						parsedContent.Links,
-						htmlInfo,
-						geoLocationInfo,
-						dnsInfo,
-						certDetails,
-						reverseDNSInfo,
-						waybackSnapshots,
-						whoisInfo,
-						dorkResults,
-					)
+					err = report.GeneratePDFReport(reportData)
 					if err != nil {
 						log.Printf("Error generating PDF report: %v", err)
+					}
+
+					// Generate JSON Report
+					fmt.Printf("\nGenerating raw JSON report\n")
+					err = report.GenerateJSONReport(reportData)
+					if err != nil {
+						log.Printf("Error generating JSON report: %v", err)
 					}
 
 					return nil

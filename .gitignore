@@ -1,1 +1,33 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/gomain_analysis
+
+# Test artifacts
+*.test
+coverage.out
+
+# Go workspace
+go.work
+go.work.sum
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Project-specific
 /assets/*
+!/assets/.gitkeep
+*_report.pdf
+*_raw.json
+gosec-results.json
