@@ -36,4 +36,3 @@ func Close() {
 		log.Println("GeoLite2 database closed successfully")
 	}
 }
-

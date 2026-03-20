@@ -52,7 +52,7 @@ func QueryCrtsh(url string) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to read crt.sh response body: %v", err)
 		}
-		
+
 		return body, nil
 	}
 
@@ -118,4 +118,3 @@ func PrintCertDetails(cert *x509.Certificate) {
 		log.Printf("    - %s", dnsName)
 	}
 }
-

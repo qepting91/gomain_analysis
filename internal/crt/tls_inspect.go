@@ -21,8 +21,8 @@ func InspectTLS(domain, port string) ([]*x509.Certificate, error) {
 	config := &tls.Config{
 		ServerName: domain,
 		// We want to fetch the cert even if it's expired or untrusted
-		/* #nosec G402 */ // Intentional for OSINT tool
-		InsecureSkipVerify: true, 
+		/* #nosec G402 */   // Intentional for OSINT tool
+		InsecureSkipVerify: true,
 	}
 
 	// Dial with a 10-second timeout

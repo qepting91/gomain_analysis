@@ -24,7 +24,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-
 func main() {
 	if err := geolite.Initialize(); err != nil {
 		log.Printf("WARNING: GeoLite2 initialization failed (geolocation will be skipped): %v", err)
@@ -83,12 +82,12 @@ func main() {
 						log.Printf("Error fetching historical certificates: %v", err)
 					} else {
 						for _, logEntry := range logsArray {
-							pemData, err := crt.DownloadPemFile(logEntry.MinCertID)
-							if err != nil {
+							pemData, pemErr := crt.DownloadPemFile(logEntry.MinCertID)
+							if pemErr != nil {
 								continue
 							}
-							cert, err := crt.ParseCertificate(pemData)
-							if err != nil {
+							cert, certErr := crt.ParseCertificate(pemData)
+							if certErr != nil {
 								continue
 							}
 							reportData.Certificates = append(reportData.Certificates, report.CertData{
@@ -157,20 +156,15 @@ func main() {
 						}
 					}
 
-					// Wayback Machine
-					fmt.Printf("\nFetching Wayback Machine snapshots\n")
+					// Wayback Machine (100% Passive - CDX API)
+					fmt.Printf("\nFetching Wayback Machine snapshots (passive CDX query)\n")
 					waybackSnaps := wayback.FetchSnapshots(domain)
-					for _, snapStr := range waybackSnaps {
-						parts := strings.Split(snapStr, "\nURL: ")
-						if len(parts) == 2 {
-							// Ex: "[20260320] Status 200"
-							statusPart := parts[0]
-							reportData.WaybackSnapshots = append(reportData.WaybackSnapshots, report.WaybackSnapshot{
-								Timestamp: statusPart,
-								URL:       parts[1],
-								Status:    "Archived",
-							})
-						}
+					for _, snap := range waybackSnaps {
+						reportData.WaybackSnapshots = append(reportData.WaybackSnapshots, report.WaybackSnapshot{
+							Timestamp: wayback.FormatTimestamp(snap.Timestamp),
+							URL:       wayback.GetSnapshotURL(snap.Timestamp, snap.URL),
+							Status:    snap.StatusCode,
+						})
 					}
 
 					// Google Dorking
@@ -194,12 +188,12 @@ func main() {
 					// Geolocation
 					fmt.Printf("\nFetching geolocation information\n")
 					for _, ip := range dnsRecords {
-						geoInfo, err := geolocation.LookupGeolocation(ip)
-						if err != nil {
-							log.Printf("Error getting geolocation for IP %s: %v", ip, err)
+						geoInfo, geoErr := geolocation.LookupGeolocation(ip)
+						if geoErr != nil {
+							log.Printf("Error getting geolocation for IP %s: %v", ip, geoErr)
 							continue
 						}
-						
+
 						geo := report.GeoData{
 							IP:          ip,
 							City:        geoInfo.City.Names["en"],
@@ -217,8 +211,8 @@ func main() {
 					}
 
 					// Passive OSINT Enhancements (Subfinder, VirusTotal, HIBP)
-					fmt.Printf("\nExecuting passive subdomain enumeration (Subfinder)\n")
-					reportData.Subdomains = subfinder.Enumerate(domain)
+					fmt.Printf("\nExecuting passive subdomain enumeration (Subfinder with fallback methods)\n")
+					reportData.Subdomains = subfinder.EnumerateWithFallback(domain)
 
 					fmt.Printf("\nQuerying VirusTotal community reputation database\n")
 					vtResult := reputation.CheckDomain(domain)
@@ -252,8 +246,8 @@ func main() {
 		},
 	}
 
-	err := app.Run(os.Args)
-	if err != nil {
-		log.Fatal(err)
+	if err := app.Run(os.Args); err != nil {
+		log.Printf("Application error: %v", err)
+		os.Exit(1)
 	}
 }

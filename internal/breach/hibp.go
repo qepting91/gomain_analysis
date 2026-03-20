@@ -17,12 +17,12 @@ type HIBPBreach struct {
 	BreachDate string `json:"BreachDate"`
 }
 
-// CheckEmails passively takes a list of discovered emails and queries the 
+// CheckEmails passively takes a list of discovered emails and queries the
 // HaveIBeenPwned API to see if they were exposed in known data dumps.
 // It requires the HIBP_API_KEY environment variable.
 func CheckEmails(emails []string) map[string][]string {
 	breachesFound := make(map[string][]string)
-	
+
 	apiKey := os.Getenv("HIBP_API_KEY")
 	if apiKey == "" {
 		log.Println("HIBP_API_KEY not found in environment. Skipping passive Identity Breach checks.")
@@ -52,7 +52,7 @@ func CheckEmails(emails []string) map[string][]string {
 			log.Printf("HIBP query failed for %s: %v", email, err)
 			continue
 		}
-		
+
 		// 404 means no breaches found for this email, which is good!
 		if resp.StatusCode == http.StatusNotFound {
 			resp.Body.Close()
@@ -80,7 +80,7 @@ func CheckEmails(emails []string) map[string][]string {
 		for _, b := range breaches {
 			breachNames = append(breachNames, fmt.Sprintf("%s (%s)", b.Name, b.BreachDate))
 		}
-		
+
 		if len(breachNames) > 0 {
 			breachesFound[email] = breachNames
 		}

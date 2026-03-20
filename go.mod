@@ -5,8 +5,9 @@ go 1.24.0
 require (
 	github.com/PuerkitoBio/goquery v1.10.0
 	github.com/domainr/whois v0.1.0
+	github.com/go-pdf/fpdf v0.9.0
 	github.com/oschwald/geoip2-golang v1.11.0
-	github.com/seekr-osint/wayback-machine-golang v1.1.2
+	github.com/projectdiscovery/subfinder/v2 v2.13.0
 	github.com/urfave/cli/v2 v2.27.4
 )
 
@@ -15,23 +16,18 @@ require (
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Mzack9999/gcache v0.0.0-20230410081825-519e28eab057 // indirect
 	github.com/Mzack9999/go-http-digest-auth-client v0.6.1-0.20220414142836-eb8883508809 // indirect
-	github.com/R4yGM/dorkscout v0.0.0-20210818101352-dd87daf1c10a // indirect
 	github.com/STARRY-S/zip v0.2.1 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/akrylysov/pogreb v0.10.1 // indirect
 	github.com/alecthomas/chroma/v2 v2.14.0 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
-	github.com/antchfx/htmlquery v1.2.3 // indirect
-	github.com/antchfx/xmlquery v1.2.4 // indirect
-	github.com/antchfx/xpath v1.1.8 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/bodgit/plumbing v1.3.0 // indirect
 	github.com/bodgit/sevenzip v1.6.0 // indirect
 	github.com/bodgit/windows v1.0.1 // indirect
-	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/charmbracelet/glamour v0.8.0 // indirect
 	github.com/charmbracelet/lipgloss v0.13.0 // indirect
 	github.com/charmbracelet/x/ansi v0.3.2 // indirect
@@ -44,15 +40,9 @@ require (
 	github.com/dlclark/regexp2 v1.11.5 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect
-	github.com/famasoon/crtsh v0.0.0-20220819163426-df40d0a6f9f5 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/gaissmai/bart v0.26.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
-	github.com/go-pdf/fpdf v0.9.0 // indirect
-	github.com/gobwas/glob v0.2.3 // indirect
-	github.com/gocolly/colly/v2 v2.1.0 // indirect
-	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
-	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-github/v30 v30.1.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
@@ -63,9 +53,7 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
-	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kennygrant/sanitize v1.2.4 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/lib/pq v1.10.9 // indirect
@@ -101,7 +89,6 @@ require (
 	github.com/projectdiscovery/ratelimit v0.0.82 // indirect
 	github.com/projectdiscovery/retryabledns v1.0.111 // indirect
 	github.com/projectdiscovery/retryablehttp-go v1.1.0 // indirect
-	github.com/projectdiscovery/subfinder/v2 v2.13.0 // indirect
 	github.com/projectdiscovery/utils v0.7.3 // indirect
 	github.com/refraction-networking/utls v1.7.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
@@ -111,10 +98,7 @@ require (
 	github.com/shirou/gopsutil/v3 v3.23.7 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/sorairolake/lzip-go v0.3.5 // indirect
-	github.com/spf13/cobra v1.7.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
-	github.com/temoto/robotstxt v1.1.1 // indirect
 	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/tidwall/btree v1.6.0 // indirect
 	github.com/tidwall/buntdb v1.3.0 // indirect
@@ -139,7 +123,6 @@ require (
 	github.com/zonedb/zonedb v1.0.3544 // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	go.zakaria.org/sghs v1.2.0 // indirect
 	go4.org v0.0.0-20230225012048-214862532bf5 // indirect
 	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
@@ -152,8 +135,6 @@ require (
 	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.38.0 // indirect
-	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/djherbis/times.v1 v1.3.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

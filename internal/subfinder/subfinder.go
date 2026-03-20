@@ -18,7 +18,7 @@ func Enumerate(domain string) []string {
 	opts := &runner.Options{
 		Threads:            10,
 		Timeout:            30,
-		MaxEnumerationTime: 5, // Maximum time to run in minutes
+		MaxEnumerationTime: 5,    // Maximum time to run in minutes
 		Silent:             true, // Prevents banner printing and verbose logs
 	}
 

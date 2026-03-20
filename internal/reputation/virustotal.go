@@ -40,7 +40,7 @@ func CheckDomain(domain string) *VTResult {
 	}
 
 	url := fmt.Sprintf("https://www.virustotal.com/api/v3/domains/%s", domain)
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", url, http.NoBody)
 	if err != nil {
 		log.Printf("Failed to create VirusTotal request: %v", err)
 		return nil

@@ -57,12 +57,12 @@ func GeneratePDFReport(data *ReportData) error {
 	pdf.Ln(40)
 	pdf.SCellFormat(0, 15, "Cyber Threat Intelligence", "", 1, "C", false, 0, "")
 	pdf.SCellFormat(0, 15, "Domain Analysis Report", "", 1, "C", false, 0, "")
-	
+
 	pdf.Ln(20)
 	pdf.SetFont("Arial", "B", 18)
 	pdf.SetTextColor(0, 51, 102) // Dark Blue
 	pdf.SCellFormat(0, 10, data.Domain, "", 1, "C", false, 0, "")
-	
+
 	pdf.Ln(20)
 	pdf.SetTextColor(0, 0, 0)
 	pdf.SetFont("Arial", "", 12)
@@ -92,7 +92,7 @@ func GeneratePDFReport(data *ReportData) error {
 	pdf.SetFont("Arial", "", 10)
 	if len(data.DNSRecords) > 0 {
 		for _, record := range data.DNSRecords {
-			pdf.SCell(0, 6, "• " + record)
+			pdf.SCell(0, 6, "• "+record)
 			pdf.Ln(6)
 		}
 	} else {
@@ -119,7 +119,8 @@ func GeneratePDFReport(data *ReportData) error {
 	// --- Geolocation ---
 	addSectionHeader(pdf, "3. Geolocation")
 	if len(data.Geolocation) > 0 {
-		for _, geo := range data.Geolocation {
+		for i := range data.Geolocation {
+			geo := &data.Geolocation[i]
 			pdf.SetFont("Arial", "B", 10)
 			pdf.SCell(0, 8, fmt.Sprintf("IP: %s", geo.IP))
 			pdf.Ln(6)
@@ -147,17 +148,17 @@ func GeneratePDFReport(data *ReportData) error {
 				title += fmt.Sprintf(" (ID: %d)", cert.ID)
 			}
 			pdf.SCellFormat(0, 8, title, "1", 1, "L", true, 0, "")
-			
+
 			pdf.SetFont("Arial", "", 9)
 			pdf.SCellFormat(30, 6, "Subject:", "L", 0, "L", false, 0, "")
 			pdf.SMultiCell(0, 6, cert.Subject, "R", "L", false)
-			
+
 			pdf.SCellFormat(30, 6, "Issuer:", "L", 0, "L", false, 0, "")
 			pdf.SMultiCell(0, 6, cert.Issuer, "R", "L", false)
-			
+
 			pdf.SCellFormat(30, 6, "Validity:", "L", 0, "L", false, 0, "")
 			pdf.SCellFormat(0, 6, fmt.Sprintf("%s  TO  %s", cert.ValidFrom.Format("2006-01-02"), cert.ValidTo.Format("2006-01-02")), "R", 1, "L", false, 0, "")
-			
+
 			pdf.SCellFormat(30, 6, "SANs:", "LB", 0, "L", false, 0, "")
 			sans := strings.Join(cert.DNSNames, ", ")
 			if len(sans) > 100 {
@@ -179,24 +180,24 @@ func GeneratePDFReport(data *ReportData) error {
 		pdf.SetFont("Arial", "B", 10)
 		pdf.SCell(0, 6, fmt.Sprintf("Title: %s", data.WebAnalysis.Title))
 		pdf.Ln(8)
-		
+
 		pdf.SetFont("Arial", "", 10)
 		if len(data.WebAnalysis.Emails) > 0 {
-			pdf.SCell(0, 6, "Emails: " + strings.Join(data.WebAnalysis.Emails, ", "))
+			pdf.SCell(0, 6, "Emails: "+strings.Join(data.WebAnalysis.Emails, ", "))
 			pdf.Ln(6)
 		}
 		if len(data.WebAnalysis.Technologies) > 0 {
-			pdf.SCell(0, 6, "Technologies: " + strings.Join(data.WebAnalysis.Technologies, ", "))
+			pdf.SCell(0, 6, "Technologies: "+strings.Join(data.WebAnalysis.Technologies, ", "))
 			pdf.Ln(6)
 		}
-		
+
 		pdf.Ln(4)
 		pdf.SetFont("Arial", "B", 10)
 		pdf.SCell(0, 6, fmt.Sprintf("Links Discovered (%d total)", len(data.WebAnalysis.Links)))
 		pdf.Ln(6)
 		pdf.SetFont("Arial", "", 9)
 		pdf.SetTextColor(0, 0, 255)
-		
+
 		// Only print up to 30 links to save space
 		linkCount := len(data.WebAnalysis.Links)
 		displayLimit := 30
@@ -213,7 +214,7 @@ func GeneratePDFReport(data *ReportData) error {
 		pdf.SetTextColor(0, 0, 0)
 		if linkCount > displayLimit {
 			pdf.Ln(2)
-			pdf.SCellFormat(0, 5, fmt.Sprintf("... and %d more links (omitted for brevity)", linkCount - displayLimit), "", 1, "I", false, 0, "")
+			pdf.SCellFormat(0, 5, fmt.Sprintf("... and %d more links (omitted for brevity)", linkCount-displayLimit), "", 1, "I", false, 0, "")
 		}
 		pdf.Ln(10)
 	} else {
@@ -225,7 +226,7 @@ func GeneratePDFReport(data *ReportData) error {
 	// --- Threat Intelligence & Reputation ---
 	pdf.AddPage()
 	addSectionHeader(pdf, "6. Threat Intelligence & Reputation")
-	
+
 	pdf.SetFont("Arial", "B", 11)
 	pdf.SCell(0, 8, "VirusTotal Community Scoring:")
 	pdf.Ln(8)
@@ -244,10 +245,10 @@ func GeneratePDFReport(data *ReportData) error {
 		pdf.SCell(0, 6, "VirusTotal check skipped (VT_API_KEY absent).")
 		pdf.Ln(6)
 	}
-	
-	pdf.SetTextColor(0,0,0)
+
+	pdf.SetTextColor(0, 0, 0)
 	if len(data.VT_Tags) > 0 {
-		pdf.SCell(0, 6, "Domain Tags: " + strings.Join(data.VT_Tags, ", "))
+		pdf.SCell(0, 6, "Domain Tags: "+strings.Join(data.VT_Tags, ", "))
 		pdf.Ln(6)
 	}
 	pdf.Ln(5)
@@ -260,10 +261,10 @@ func GeneratePDFReport(data *ReportData) error {
 	case len(data.BreachedEmails) > 0:
 		for email, breaches := range data.BreachedEmails {
 			pdf.SetTextColor(200, 0, 0) // Red
-			pdf.SCell(0, 6, "[COMPROMISED] " + email)
+			pdf.SCell(0, 6, "[COMPROMISED] "+email)
 			pdf.Ln(6)
 			pdf.SetTextColor(0, 0, 0)
-			pdf.SCell(0, 6, "Found in breaches: " + strings.Join(breaches, ", "))
+			pdf.SCell(0, 6, "Found in breaches: "+strings.Join(breaches, ", "))
 			pdf.Ln(8)
 		}
 	case data.WebAnalysis != nil && len(data.WebAnalysis.Emails) > 0 && data.VT_Tags != nil:
@@ -290,7 +291,7 @@ func GeneratePDFReport(data *ReportData) error {
 			subLimit = len(data.Subdomains)
 		}
 		for i := 0; i < subLimit; i++ {
-			pdf.SCell(0, 5, "- " + data.Subdomains[i])
+			pdf.SCell(0, 5, "- "+data.Subdomains[i])
 			pdf.Ln(5)
 		}
 		if len(data.Subdomains) > subLimit {
@@ -304,7 +305,7 @@ func GeneratePDFReport(data *ReportData) error {
 	// --- Historical & Dorks ---
 	pdf.AddPage()
 	addSectionHeader(pdf, "7. Historical & External Exposure")
-	
+
 	pdf.SetFont("Arial", "B", 11)
 	pdf.SCell(0, 8, "Wayback Machine Snapshots")
 	pdf.Ln(8)
@@ -319,12 +320,12 @@ func GeneratePDFReport(data *ReportData) error {
 			pdf.Ln(4)
 		}
 	} else {
-		pdf.SetTextColor(0,0,0)
+		pdf.SetTextColor(0, 0, 0)
 		pdf.SCell(0, 6, "No Wayback Machine snapshots found.")
 		pdf.Ln(8)
 	}
 
-	pdf.SetTextColor(0,0,0)
+	pdf.SetTextColor(0, 0, 0)
 	pdf.Ln(5)
 	pdf.SetFont("Arial", "B", 11)
 	pdf.SCell(0, 8, "Google Dork Queries")
@@ -339,12 +340,12 @@ func GeneratePDFReport(data *ReportData) error {
 		for i := 0; i < limit; i++ {
 			dork := data.Dorks[i]
 			pdf.SetTextColor(0, 0, 0)
-			
+
 			cleanQuery := strings.TrimSpace(strings.TrimPrefix(dork.Query, "Query: "))
-			pdf.SCell(0, 5, "Query: " + cleanQuery)
+			pdf.SCell(0, 5, "Query: "+cleanQuery)
 			pdf.Ln(5)
 			pdf.SetTextColor(0, 0, 255)
-			
+
 			urlPrint := dork.URL
 			if len(urlPrint) > 100 {
 				urlPrint = urlPrint[:97] + "..."
@@ -352,7 +353,7 @@ func GeneratePDFReport(data *ReportData) error {
 			pdf.SCellFormat(0, 5, urlPrint, "", 1, "", false, 0, dork.URL)
 			pdf.Ln(3)
 		}
-		pdf.SetTextColor(0,0,0)
+		pdf.SetTextColor(0, 0, 0)
 		if len(data.Dorks) > limit {
 			pdf.SCellFormat(0, 5, fmt.Sprintf("... plus %d more targeted queries (see JSON for full list)", len(data.Dorks)-limit), "", 1, "I", false, 0, "")
 		}
@@ -376,7 +377,7 @@ func addSectionHeader(pdf *SafePDF, title string) {
 	pdf.SetFont("Arial", "B", 14)
 	pdf.SetTextColor(255, 255, 255)
 	pdf.SetFillColor(0, 51, 102) // Dark Blue
-	pdf.SCellFormat(0, 10, "  " + title, "", 1, "L", true, 0, "")
+	pdf.SCellFormat(0, 10, "  "+title, "", 1, "L", true, 0, "")
 	pdf.SetTextColor(0, 0, 0) // Reset text color
 	pdf.Ln(5)
 }

@@ -25,6 +25,7 @@ func NewDNSResolver() *DNSResolver {
 
 // RunAmassPassive performs passive subdomain enumeration using Amass
 func (d *DNSResolver) RunAmassPassive(domain string) ([]string, error) {
+	// #nosec G204 -- domain parameter is validated by caller, used for legitimate OSINT purposes
 	cmd := exec.Command("amass", "enum", "-passive", "-d", domain)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
@@ -80,6 +81,7 @@ func (d *DNSResolver) ReverseLookup(ips []string) (map[string][]string, error) {
 	}
 
 	for _, ip := range ips {
+		// #nosec G204 -- IPs are validated from DNS resolution, args are controlled
 		cmd := exec.Command("hakrevdns", args...)
 		stdin, err := cmd.StdinPipe()
 		if err != nil {
