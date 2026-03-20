@@ -1,4 +1,4 @@
-version: 1
+version: "2"
 # golangci-lint configuration
 # https://golangci-lint.run/usage/configuration/
 run:
@@ -6,6 +6,7 @@ run:
   go: "1.25"
 
 linters:
+  default: none
   enable:
     # Default linters
     - govet          # Go team's vet tool — reports suspicious constructs
@@ -22,7 +23,7 @@ linters:
     - bodyclose      # Checks whether HTTP response body is closed
     - gocritic       # Opinionated Go linter with 100+ checks
     - nilerr         # Finds code that returns nil even if error is not nil
-    - exportloopref  # Detects pointers to enclosing loop variables
+    - copyloopvar    # Detects copies of loop variables (replaces exportloopref in v2)
 
     # Style & maintainability
     - gofmt          # Checks whether code is gofmt-ed
