@@ -138,15 +138,24 @@ func GeneratePDFReport(data *ReportData) error {
 
 	// --- SSL/TLS Certificates ---
 	pdf.AddPage()
-	addSectionHeader(pdf, "4. SSL/TLS Certificates")
-	if len(data.Certificates) > 0 {
-		for i, cert := range data.Certificates {
+	addSectionHeader(pdf, "4. Live SSL/TLS Certificates")
+	
+	var liveCerts []CertData
+	var historyCerts []CertData
+	
+	for _, cert := range data.Certificates {
+		if cert.Source == "CT LOG (HISTORY)" {
+			historyCerts = append(historyCerts, cert)
+		} else {
+			liveCerts = append(liveCerts, cert)
+		}
+	}
+
+	if len(liveCerts) > 0 {
+		for i, cert := range liveCerts {
 			pdf.SetFont("Arial", "B", 10)
 			pdf.SetFillColor(240, 240, 240)
 			title := fmt.Sprintf("Certificate #%d [%s]", i+1, cert.Source)
-			if cert.ID != 0 {
-				title += fmt.Sprintf(" (ID: %d)", cert.ID)
-			}
 			pdf.SCellFormat(0, 8, title, "1", 1, "L", true, 0, "")
 
 			pdf.SetFont("Arial", "", 9)
@@ -169,8 +178,33 @@ func GeneratePDFReport(data *ReportData) error {
 		}
 	} else {
 		pdf.SetFont("Arial", "", 10)
-		pdf.SCell(0, 6, "No certificate information available.")
+		pdf.SCell(0, 6, "No live certificate information available.")
 		pdf.Ln(10)
+	}
+
+	// Historical Timeline Table (CTI Value)
+	if len(historyCerts) > 0 {
+		pdf.Ln(5)
+		addSectionHeader(pdf, "4.1 Historical CT Log Timeline")
+		pdf.SetFont("Arial", "B", 9)
+		pdf.SetFillColor(200, 200, 200)
+		
+		// Table Headers
+		pdf.SCellFormat(30, 7, "Issue Date", "1", 0, "C", true, 0, "")
+		pdf.SCellFormat(30, 7, "Expiration", "1", 0, "C", true, 0, "")
+		pdf.SCellFormat(130, 7, "Issuer Authority", "1", 1, "C", true, 0, "")
+
+		pdf.SetFont("Arial", "", 8)
+		for _, cert := range historyCerts {
+			issuer := cert.Issuer
+			if len(issuer) > 70 {
+				issuer = issuer[:67] + "..."
+			}
+			pdf.SCellFormat(30, 6, cert.ValidFrom.Format("2006-01-02"), "1", 0, "C", false, 0, "")
+			pdf.SCellFormat(30, 6, cert.ValidTo.Format("2006-01-02"), "1", 0, "C", false, 0, "")
+			pdf.SCellFormat(130, 6, issuer, "1", 1, "L", false, 0, "")
+		}
+		pdf.Ln(5)
 	}
 
 	// --- Web Content Analysis ---

@@ -87,13 +87,13 @@ func AnalyzeJavaScript(htmlContent string, baseURL string) (*JSAnalysisResult, e
 func analyzeJSContent(jsCode, sourceFile string, result *JSAnalysisResult) {
 	// 1. Extract API endpoints (common patterns)
 	apiPatterns := []*regexp.Regexp{
-		regexp.MustCompile(`["'](/api/[^"'\s]+)["']`),                    // /api/...
-		regexp.MustCompile(`["'](/v[0-9]/[^"'\s]+)["']`),                 // /v1/..., /v2/...
-		regexp.MustCompile(`["'](https?://[^"'\s]+/api[^"'\s]*)["']`),    // Full API URLs
-		regexp.MustCompile(`["'](https?://[^"'\s]+/graphql[^"'\s]*)["']`), // GraphQL endpoints
-		regexp.MustCompile(`fetch\(["']([^"']+)["']`),                    // fetch() calls
+		regexp.MustCompile(`["'](/api/[^"'\s]+)["']`),                        // /api/...
+		regexp.MustCompile(`["'](/v[0-9]/[^"'\s]+)["']`),                     // /v1/..., /v2/...
+		regexp.MustCompile(`["'](https?://[^"'\s]+/api[^"'\s]*)["']`),        // Full API URLs
+		regexp.MustCompile(`["'](https?://[^"'\s]+/graphql[^"'\s]*)["']`),    // GraphQL endpoints
+		regexp.MustCompile(`fetch\(["']([^"']+)["']`),                        // fetch() calls
 		regexp.MustCompile(`axios\.(get|post|put|delete)\(["']([^"']+)["']`), // axios calls
-		regexp.MustCompile(`\$\.ajax\(.*?url:\s*["']([^"']+)["']`),       // jQuery ajax
+		regexp.MustCompile(`\$\.ajax\(.*?url:\s*["']([^"']+)["']`),           // jQuery ajax
 	}
 
 	for _, pattern := range apiPatterns {
@@ -286,13 +286,13 @@ func (r *JSAnalysisResult) GetCriticalFindings() []SecretMatch {
 	critical := []SecretMatch{}
 
 	criticalTypes := map[string]bool{
-		"aws_key":       true,
-		"aws_secret":    true,
-		"jwt":           true,
-		"slack_token":   true,
-		"github_token":  true,
-		"stripe_key":    true,
-		"google_api":    true,
+		"aws_key":      true,
+		"aws_secret":   true,
+		"jwt":          true,
+		"slack_token":  true,
+		"github_token": true,
+		"stripe_key":   true,
+		"google_api":   true,
 	}
 
 	for _, secret := range r.PotentialSecrets {

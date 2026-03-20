@@ -65,9 +65,9 @@ func queryCDXAPI(targetURL string) []Snapshot {
 	params := url.Values{}
 	params.Add("url", targetURL)
 	params.Add("output", "json")
-	params.Add("limit", "100") // Get up to 100 most recent snapshots
+	params.Add("limit", "100")             // Get up to 100 most recent snapshots
 	params.Add("filter", "statuscode:200") // Only successful captures
-	params.Add("collapse", "timestamp:8") // One per day (YYYYMMDD)
+	params.Add("collapse", "timestamp:8")  // One per day (YYYYMMDD)
 
 	fullURL := cdxURL + "?" + params.Encode()
 

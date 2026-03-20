@@ -28,14 +28,14 @@ type ThreatIntelligence struct {
 
 // URLhausEntry represents a malicious URL from URLhaus
 type URLhausEntry struct {
-	URL            string
-	Status         string
-	Threat         string
-	Tags           []string
-	FirstSeen      string
-	Takedown       string
-	MalwareFamily  string
-	ReporterName   string
+	URL           string
+	Status        string
+	Threat        string
+	Tags          []string
+	FirstSeen     string
+	Takedown      string
+	MalwareFamily string
+	ReporterName  string
 }
 
 // ThreatFoxIOC represents an Indicator of Compromise from ThreatFox
@@ -141,13 +141,13 @@ func checkURLhaus(domain string) []URLhausEntry {
 	var apiResp struct {
 		QueryStatus string `json:"query_status"`
 		URLs        []struct {
-			URL           string   `json:"url"`
-			URLStatus     string   `json:"url_status"`
-			DateAdded     string   `json:"date_added"`
-			Threat        string   `json:"threat"`
-			Tags          []string `json:"tags"`
-			URLhausLink   string   `json:"urlhaus_link"`
-			Reporter      string   `json:"reporter"`
+			URL         string   `json:"url"`
+			URLStatus   string   `json:"url_status"`
+			DateAdded   string   `json:"date_added"`
+			Threat      string   `json:"threat"`
+			Tags        []string `json:"tags"`
+			URLhausLink string   `json:"urlhaus_link"`
+			Reporter    string   `json:"reporter"`
 		} `json:"urls"`
 	}
 
@@ -162,11 +162,11 @@ func checkURLhaus(domain string) []URLhausEntry {
 	var results []URLhausEntry
 	for _, u := range apiResp.URLs {
 		results = append(results, URLhausEntry{
-			URL:       u.URL,
-			Status:    u.URLStatus,
-			Threat:    u.Threat,
-			Tags:      u.Tags,
-			FirstSeen: u.DateAdded,
+			URL:          u.URL,
+			Status:       u.URLStatus,
+			Threat:       u.Threat,
+			Tags:         u.Tags,
+			FirstSeen:    u.DateAdded,
 			ReporterName: u.Reporter,
 		})
 	}
@@ -230,13 +230,13 @@ func queryThreatFoxIOC(apiURL, iocType, value string) []ThreatFoxIOC {
 	var apiResp struct {
 		QueryStatus string `json:"query_status"`
 		Data        []struct {
-			IOCType       string   `json:"ioc_type"`
-			IOCValue      string   `json:"ioc_value"`
-			MalwareAlias  string   `json:"malware_alias"`
-			Confidence    int      `json:"confidence_level"`
-			FirstSeen     string   `json:"first_seen"`
-			Tags          []string `json:"tags"`
-			Reporter      string   `json:"reporter"`
+			IOCType      string   `json:"ioc_type"`
+			IOCValue     string   `json:"ioc_value"`
+			MalwareAlias string   `json:"malware_alias"`
+			Confidence   int      `json:"confidence_level"`
+			FirstSeen    string   `json:"first_seen"`
+			Tags         []string `json:"tags"`
+			Reporter     string   `json:"reporter"`
 		} `json:"data"`
 	}
 

@@ -75,30 +75,70 @@ func main() {
 						}
 					}
 
-					// Historical Certificate Analysis (CT Logs)
-					fmt.Printf("\nFetching Historical CT logs for %s from crt.sh\n", domain)
-					logsArray, err := crt.QueryByDomain(domain)
+					// Historical Certificate Analysis (CT Logs) - Rich JSON History
+					fmt.Printf("\nFetching rich historical certificates from CT logs via crt.sh\n")
+					historicalCerts, err := crt.GetHistoricalCerts(domain)
 					if err != nil {
-						log.Printf("Error fetching historical certificates: %v", err)
+						log.Printf("Error fetching historical CT logs: %v", err)
 					} else {
-						for _, logEntry := range logsArray {
-							pemData, pemErr := crt.DownloadPemFile(logEntry.MinCertID)
-							if pemErr != nil {
-								continue
+						log.Printf("Found %d historical certificates", len(historicalCerts))
+						for _, ct := range historicalCerts {
+							// Example format: 2026-01-26T11:25:44
+							notBefore, _ := time.Parse("2006-01-02T15:04:05", ct.NotBefore)
+							notAfter, _ := time.Parse("2006-01-02T15:04:05", ct.NotAfter)
+
+							dnsNames := strings.Split(ct.NameValue, "\n")
+							for i, n := range dnsNames {
+								dnsNames[i] = strings.TrimSpace(n)
 							}
-							cert, certErr := crt.ParseCertificate(pemData)
-							if certErr != nil {
-								continue
-							}
+
 							reportData.Certificates = append(reportData.Certificates, report.CertData{
-								Source:    "CT LOG",
-								ID:        logEntry.MinCertID,
-								Subject:   cert.Subject.String(),
-								Issuer:    cert.Issuer.String(),
-								ValidFrom: cert.NotBefore,
-								ValidTo:   cert.NotAfter,
-								DNSNames:  cert.DNSNames,
+								Source:    "CT LOG (HISTORY)",
+								ID:        ct.IssuerCaID,
+								Issuer:    ct.IssuerName,
+								ValidFrom: notBefore,
+								ValidTo:   notAfter,
+								DNSNames:  dnsNames,
 							})
+						}
+					}
+
+					// Historical Certificate Analysis (CT Logs) - Now returns unique subdomains
+					fmt.Printf("\nFetching subdomains from CT logs via crt.sh (wildcard query)\n")
+					ctSubdomains, err := crt.QueryByDomain(domain)
+					if err != nil {
+						log.Printf("Error fetching CT log subdomains: %v", err)
+					} else {
+						log.Printf("Found %d unique subdomains from CT logs", len(ctSubdomains))
+
+						// Probe a sample of discovered subdomains to check which are alive
+						// (Limit to first 20 to avoid excessive probing)
+						maxProbe := 20
+						if len(ctSubdomains) < maxProbe {
+							maxProbe = len(ctSubdomains)
+						}
+
+						for i := 0; i < maxProbe; i++ {
+							subdomain := ctSubdomains[i]
+							log.Printf("Probing subdomain %d/%d: %s", i+1, maxProbe, subdomain)
+
+							certs, probeErr := crt.InspectTLS(subdomain, "443")
+							if probeErr != nil {
+								// Subdomain not reachable or no TLS
+								continue
+							}
+
+							// Successfully connected - add the live certificate
+							for _, cert := range certs {
+								reportData.Certificates = append(reportData.Certificates, report.CertData{
+									Source:    "CT LOG (LIVE)",
+									Subject:   cert.Subject.String(),
+									Issuer:    cert.Issuer.String(),
+									ValidFrom: cert.NotBefore,
+									ValidTo:   cert.NotAfter,
+									DNSNames:  cert.DNSNames,
+								})
+							}
 						}
 					}
 

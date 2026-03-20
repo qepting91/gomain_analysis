@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -27,11 +28,20 @@ type CTLog struct {
 
 // QueryCrtsh sends an HTTP GET request to crt.sh and returns the response body, with retries.
 func QueryCrtsh(url string) ([]byte, error) {
-	client := &http.Client{Timeout: 30 * time.Second} // Increased timeout
+	client := &http.Client{Timeout: 30 * time.Second}
 
 	var lastErr error
 	for attempts := 1; attempts <= 3; attempts++ {
-		resp, err := client.Get(url)
+		req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create request: %v", err)
+		}
+
+		// Spoof a normal browser to avoid basic WAF blocking
+		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+		req.Header.Set("Accept", "application/json")
+
+		resp, err := client.Do(req)
 		if err != nil {
 			lastErr = err
 			log.Printf("crt.sh query attempt %d failed: %v", attempts, err)
@@ -59,9 +69,54 @@ func QueryCrtsh(url string) ([]byte, error) {
 	return nil, fmt.Errorf("all crt.sh query attempts failed. Last error: %v", lastErr)
 }
 
-// QueryByDomain queries crt.sh for certificates by domain and deduplicates the results by MinCertID.
-func QueryByDomain(domain string) ([]CTLog, error) {
-	url := fmt.Sprintf("%s/?output=json&q=%s", CRTSHURL, domain)
+// QueryByDomain queries crt.sh for certificates by domain, extracts all subdomains,
+// handles newlines in SANs, strips wildcards, and deduplicates the final list.
+func QueryByDomain(domain string) ([]string, error) {
+	// FIXED: Added %%25. to act as the URL-encoded wildcard query (%.domain)
+	url := fmt.Sprintf("%s/?output=json&q=%%25.%s", CRTSHURL, domain)
+
+	body, err := QueryCrtsh(url)
+	if err != nil {
+		return nil, err
+	}
+
+	var logs []CTLog
+	if err := json.Unmarshal(body, &logs); err != nil {
+		return nil, fmt.Errorf("failed to parse crt.sh response (likely returned HTML 502 error): %v", err)
+	}
+
+	// FIXED: Deduplicate by domain string, not by Certificate ID
+	seen := make(map[string]struct{})
+	var uniqueSubdomains []string
+
+	for _, l := range logs {
+		// FIXED: Split multiple SANs hidden inside the single name_value string
+		names := strings.Split(l.NameValue, "\n")
+
+		for _, name := range names {
+			// Clean up the string by removing wildcard prefixes
+			cleanName := strings.TrimPrefix(name, "*.")
+			cleanName = strings.TrimSpace(cleanName)
+
+			// Deduplicate using an empty struct map (memory efficient)
+			if cleanName != "" {
+				if _, exists := seen[cleanName]; !exists {
+					seen[cleanName] = struct{}{}
+					uniqueSubdomains = append(uniqueSubdomains, cleanName)
+				}
+			}
+		}
+	}
+
+	log.Printf("Successfully retrieved %d unique subdomains for %s", len(uniqueSubdomains), domain)
+	return uniqueSubdomains, nil
+}
+
+// GetHistoricalCerts queries crt.sh for a domain and returns the raw JSON history.
+// This is used for CTI enrichment (tracking infrastructure migrations and timelines).
+func GetHistoricalCerts(domain string) ([]CTLog, error) {
+	url := fmt.Sprintf("%s/?output=json&q=%%25.%s", CRTSHURL, domain)
+
 	body, err := QueryCrtsh(url)
 	if err != nil {
 		return nil, err
@@ -72,18 +127,7 @@ func QueryByDomain(domain string) ([]CTLog, error) {
 		return nil, fmt.Errorf("failed to parse crt.sh response: %v", err)
 	}
 
-	// Deduplicate by MinCertID
-	seen := make(map[int]bool)
-	var dedupedLogs []CTLog
-	for _, l := range logs {
-		if !seen[l.MinCertID] {
-			seen[l.MinCertID] = true
-			dedupedLogs = append(dedupedLogs, l)
-		}
-	}
-
-	log.Printf("Successfully retrieved %d unique CT log entries for %s", len(dedupedLogs), domain)
-	return dedupedLogs, nil
+	return logs, nil
 }
 
 // DownloadPemFile downloads a PEM file for the given certificate ID.

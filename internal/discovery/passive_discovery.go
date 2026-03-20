@@ -110,9 +110,9 @@ func PerformPassiveDiscovery(baseURL string) (*DiscoveryResult, error) {
 		"/.well-known/matrix/server",
 		"/.well-known/openid-configuration",
 		"/.well-known/acme-challenge",
-		"/ads.txt",      // Authorized Digital Sellers
-		"/app-ads.txt",  // App ads
-		"/crossdomain.xml", // Flash policy (legacy)
+		"/ads.txt",                // Authorized Digital Sellers
+		"/app-ads.txt",            // App ads
+		"/crossdomain.xml",        // Flash policy (legacy)
 		"/clientaccesspolicy.xml", // Silverlight (legacy)
 	}
 
