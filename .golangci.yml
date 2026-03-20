@@ -10,11 +10,10 @@ linters:
   enable:
     # Default linters
     - govet          # Go team's vet tool — reports suspicious constructs
-    - staticcheck    # Advanced static analysis
+    - staticcheck    # Advanced static analysis (includes gosimple in v2.0+)
     - errcheck       # Ensures error return values are checked
     - ineffassign    # Detects useless variable assignments
     - unused         # Finds unused code
-    - gosimple       # Suggests simpler code constructions
 
     # Security
     - gosec          # Security-focused linter (hardcoded creds, weak crypto, etc.)
@@ -26,9 +25,12 @@ linters:
     - copyloopvar    # Detects copies of loop variables (replaces exportloopref in v2)
 
     # Style & maintainability
-    - gofmt          # Checks whether code is gofmt-ed
-    - goimports      # Checks import ordering and formatting
     - misspell       # Finds commonly misspelled English words in comments
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
 
 linters-settings:
   govet:

@@ -88,7 +88,7 @@ func analyzeJSContent(jsCode, sourceFile string, result *JSAnalysisResult) {
 	// 1. Extract API endpoints (common patterns)
 	apiPatterns := []*regexp.Regexp{
 		regexp.MustCompile(`["'](/api/[^"'\s]+)["']`),                        // /api/...
-		regexp.MustCompile(`["'](/v\d/[^"'\s]+)["']`),                     // /v1/..., /v2/...
+		regexp.MustCompile(`["'](/v\d/[^"'\s]+)["']`),                        // /v1/..., /v2/...
 		regexp.MustCompile(`["'](https?://[^"'\s]+/api[^"'\s]*)["']`),        // Full API URLs
 		regexp.MustCompile(`["'](https?://[^"'\s]+/graphql[^"'\s]*)["']`),    // GraphQL endpoints
 		regexp.MustCompile(`fetch\(["']([^"']+)["']`),                        // fetch() calls
@@ -221,7 +221,7 @@ func downloadJS(jsURL string) string {
 		log.Printf("[-] Failed to download JS: %s - %v", jsURL, err)
 		return ""
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return ""

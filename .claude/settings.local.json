@@ -6,7 +6,16 @@
       "Bash(golangci-lint run:*)",
       "Bash(go build:*)",
       "Bash(ls:*)",
-      "Bash(go mod tidy:*)"
+      "Bash(go mod tidy:*)",
+      "Bash(go version:*)",
+      "Bash(golangci-lint:*)",
+      "Bash(go env:*)",
+      "Bash(go install:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(C:UsersqeptiDocumentsgomain_analysis.golangci.yml << 'EOF'\nrun:\n  timeout: 5m\n  go: \"1.25\"\n\nlinters:\n  enable:\n    - errcheck\n    - staticcheck  # Includes gosimple checks in newer versions\n    - unused\n    - ineffassign\n    - typecheck\n    - govet\n    - revive\n    - misspell\n    - unconvert\n    - gofmt\n    - goimports\n    - gosec\n    - bodyclose\n    - noctx\n    - exportloopref\n    - gocritic\n\nlinters-settings:\n  staticcheck:\n    checks: [\"all\"]\n\n  gosec:\n    excludes:\n      - G204  # Subprocess launched with variable - allowed for legitimate tool execution\n\n  govet:\n    enable-all: true\n    disable:\n      - shadow  # Allow shadow variables where necessary\n\nissues:\n  exclude-rules:\n    # Exclude some linters from running on test files\n    - path: _test\\\\.go\n      linters:\n        - errcheck\n        - gosec\n\n    # Exclude specific gosec rules for legitimate subprocess usage\n    - linters:\n        - gosec\n      text: \"G204\"\n      path: internal/\\(dns|subfinder\\)/\n\n  max-issues-per-linter: 0\n  max-same-issues: 0\n\noutput:\n  formats:\n    - format: colored-line-number\n  print-issued-lines: true\n  print-linter-name: true\nEOF)",
+      "Bash(gofmt:*)",
+      "Bash(goimports:*)",
+      "Bash(find:*)"
     ]
   }
 }

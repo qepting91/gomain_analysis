@@ -32,7 +32,10 @@ func Initialize() error {
 // Close closes the GeoLite2 database
 func Close() {
 	if GeoLiteDB != nil {
-		GeoLiteDB.Close()
-		log.Println("GeoLite2 database closed successfully")
+		if err := GeoLiteDB.Close(); err != nil {
+			log.Printf("Warning: failed to close GeoLite2 database: %v", err)
+		} else {
+			log.Println("GeoLite2 database closed successfully")
+		}
 	}
 }

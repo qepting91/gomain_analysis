@@ -55,7 +55,7 @@ func CheckDomain(domain string) *VTResult {
 		log.Printf("Failed to query VirusTotal: %v", err)
 		return nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("VirusTotal API returned non-200 status: %d", resp.StatusCode)

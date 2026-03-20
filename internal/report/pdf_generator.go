@@ -34,15 +34,15 @@ type SafePDF struct {
 }
 
 func (p *SafePDF) SCell(w, h float64, txtStr string) {
-	p.Fpdf.Cell(w, h, sanitizeText(txtStr))
+	p.Cell(w, h, sanitizeText(txtStr))
 }
 
 func (p *SafePDF) SMultiCell(w, h float64, txtStr, borderStr, alignStr string, fill bool) {
-	p.Fpdf.MultiCell(w, h, sanitizeText(txtStr), borderStr, alignStr, fill)
+	p.MultiCell(w, h, sanitizeText(txtStr), borderStr, alignStr, fill)
 }
 
 func (p *SafePDF) SCellFormat(w, h float64, txtStr, borderStr string, ln int, alignStr string, fill bool, link int, linkStr string) {
-	p.Fpdf.CellFormat(w, h, sanitizeText(txtStr), borderStr, ln, alignStr, fill, link, linkStr)
+	p.CellFormat(w, h, sanitizeText(txtStr), borderStr, ln, alignStr, fill, link, linkStr)
 }
 
 // GeneratePDFReport creates a formatted, easy-to-digest PDF report from the structured data.
@@ -190,7 +190,7 @@ func GeneratePDFReport(data *ReportData) error {
 		addSectionHeader(pdf, "4.1 Historical CT Log Timeline")
 		pdf.SetFont("Arial", "B", 9)
 		pdf.SetFillColor(200, 200, 200)
-		
+
 		// Table Headers
 		pdf.SCellFormat(30, 7, "Issue Date", "1", 0, "C", true, 0, "")
 		pdf.SCellFormat(30, 7, "Expiration", "1", 0, "C", true, 0, "")

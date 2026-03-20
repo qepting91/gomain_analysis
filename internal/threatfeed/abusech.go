@@ -126,7 +126,7 @@ func checkURLhaus(domain string) []URLhausEntry {
 		log.Printf("[-] URLhaus query failed: %v", err)
 		return nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil
@@ -216,7 +216,7 @@ func queryThreatFoxIOC(apiURL, iocType, value string) []ThreatFoxIOC {
 	if err != nil {
 		return nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil
@@ -279,7 +279,7 @@ func checkSSLBlacklist(ips []string) []string {
 	if err != nil {
 		return nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil
@@ -330,7 +330,7 @@ func checkFeodoTracker(ips []string) []string {
 	if err != nil {
 		return nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil

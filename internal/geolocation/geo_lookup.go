@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/oschwald/geoip2-golang"
-	"github.com/qepting91/gomain_analysis/internal/config"
+	geolite "github.com/qepting91/gomain_analysis/internal/config"
 )
 
 // LookupGeolocation takes an IP address and returns geolocation information

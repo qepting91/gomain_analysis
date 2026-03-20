@@ -31,7 +31,7 @@ func InspectTLS(domain, port string) ([]*x509.Certificate, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to perform TLS handshake with %s: %v", address, err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	// Retrieve the certificate chain from the connection state
 	state := conn.ConnectionState()

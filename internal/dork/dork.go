@@ -17,7 +17,7 @@ func LoadDorkQueries() ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open dork queries file: %v", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	var queries []string
 	scanner := bufio.NewScanner(file)
@@ -61,7 +61,7 @@ func PerformDorkSearch(domain string, queries []string) []string {
 		}
 
 		results = append(results, fmt.Sprintf("Query: %s\nURL: %s", processedQuery, searchURL))
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 
 	return results

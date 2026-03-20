@@ -87,7 +87,7 @@ func queryCDXAPI(targetURL string) []Snapshot {
 		log.Printf("[-] Failed to query CDX API: %v", err)
 		return nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("[-] CDX API returned status %d", resp.StatusCode)
@@ -158,7 +158,7 @@ func GetAvailability(targetURL string) (*Snapshot, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("availability API returned status %d", resp.StatusCode)
@@ -244,7 +244,7 @@ func GetOldestSnapshot(targetURL string) *Snapshot {
 	if err != nil {
 		return nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -297,7 +297,7 @@ func GetNewestSnapshot(targetURL string) *Snapshot {
 	if err != nil {
 		return nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

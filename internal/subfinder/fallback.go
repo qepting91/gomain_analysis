@@ -113,7 +113,7 @@ func enumerateViaCrtSh(domain string) []string {
 
 		// Handle rate limiting / service unavailable
 		if resp.StatusCode == 503 || resp.StatusCode == 429 {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			if attempt == maxRetries {
 				log.Printf("[-] crt.sh overloaded (status %d) after %d attempts", resp.StatusCode, maxRetries+1)
 				return []string{}
@@ -122,11 +122,11 @@ func enumerateViaCrtSh(domain string) []string {
 		}
 
 		// Other non-200 status
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		log.Printf("[-] crt.sh returned status %d", resp.StatusCode)
 		return []string{}
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	log.Println("[*] crt.sh responded, processing certificate data...")
 
@@ -192,7 +192,7 @@ func enumerateViaVirusTotal(domain, apiKey string) []string {
 		log.Printf("[-] Failed to query VirusTotal: %v", err)
 		return []string{}
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("[-] VirusTotal returned non-200 status: %d", resp.StatusCode)

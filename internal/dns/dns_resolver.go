@@ -89,8 +89,8 @@ func (d *DNSResolver) ReverseLookup(ips []string) (map[string][]string, error) {
 		}
 
 		go func() {
-			defer stdin.Close()
-			fmt.Fprintln(stdin, ip)
+			defer func() { _ = stdin.Close() }()
+			_, _ = fmt.Fprintln(stdin, ip)
 		}()
 
 		output, err := cmd.Output()

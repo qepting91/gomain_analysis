@@ -63,7 +63,7 @@ func AnalyzeSecurityHeaders(targetURL string) (*HeaderAnalysis, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch URL: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Check HTTPS enforcement
 	analysis.HTTPSEnforced = strings.HasPrefix(targetURL, "https://")

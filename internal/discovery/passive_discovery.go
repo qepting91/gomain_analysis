@@ -202,7 +202,7 @@ func parseSitemap(sitemapURL string) *SitemapResult {
 	if err != nil {
 		return nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil
@@ -246,7 +246,7 @@ func fetchTextFile(url string) string {
 	if err != nil {
 		return ""
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return ""
@@ -283,7 +283,7 @@ func checkWellKnownPath(url string) WellKnownPath {
 	if err != nil {
 		return result
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	result.Status = resp.StatusCode
 	result.Size = resp.ContentLength

@@ -1,0 +1,58 @@
+run:
+  timeout: 5m
+  go: "1.25"
+
+linters:
+  enable:
+    - errcheck
+    - staticcheck  # Includes gosimple checks in newer versions
+    - unused
+    - ineffassign
+    - typecheck
+    - govet
+    - revive
+    - misspell
+    - unconvert
+    - gofmt
+    - goimports
+    - gosec
+    - bodyclose
+    - noctx
+    - exportloopref
+    - gocritic
+
+linters-settings:
+  staticcheck:
+    checks: ["all"]
+
+  gosec:
+    excludes:
+      - G204  # Subprocess launched with variable - allowed for legitimate tool execution
+
+  govet:
+    enable-all: true
+    disable:
+      - shadow  # Allow shadow variables where necessary
+
+issues:
+  exclude-rules:
+    # Exclude some linters from running on test files
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gosec
+
+    # Exclude specific gosec rules for legitimate subprocess usage
+    - linters:
+        - gosec
+      text: "G204"
+      path: internal/(dns|subfinder)/
+
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+output:
+  formats:
+    - format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true

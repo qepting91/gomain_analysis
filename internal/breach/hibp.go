@@ -55,18 +55,18 @@ func CheckEmails(emails []string) map[string][]string {
 
 		// 404 means no breaches found for this email, which is good!
 		if resp.StatusCode == http.StatusNotFound {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			continue
 		}
 
 		if resp.StatusCode != http.StatusOK {
 			log.Printf("HIBP API returned non-200 status for %s: %d", email, resp.StatusCode)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			continue
 		}
 
 		body, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if err != nil {
 			continue
 		}

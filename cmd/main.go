@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/qepting91/gomain_analysis/internal/breach"
-	"github.com/qepting91/gomain_analysis/internal/config"
+	geolite "github.com/qepting91/gomain_analysis/internal/config"
 	"github.com/qepting91/gomain_analysis/internal/crt"
 	"github.com/qepting91/gomain_analysis/internal/dns"
 	"github.com/qepting91/gomain_analysis/internal/dork"

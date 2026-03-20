@@ -50,7 +50,7 @@ func QueryCrtsh(url string) ([]byte, error) {
 		}
 
 		if resp.StatusCode != http.StatusOK {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			lastErr = fmt.Errorf("unexpected status code from crt.sh: %d", resp.StatusCode)
 			log.Printf("crt.sh query attempt %d failed: %v", attempts, lastErr)
 			time.Sleep(time.Duration(attempts) * 2 * time.Second)
@@ -58,7 +58,7 @@ func QueryCrtsh(url string) ([]byte, error) {
 		}
 
 		body, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if err != nil {
 			return nil, fmt.Errorf("failed to read crt.sh response body: %v", err)
 		}
