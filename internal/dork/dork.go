@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 )
 
 // LoadDorkQueries loads Google dork queries from queries.txt
@@ -34,7 +35,7 @@ func LoadDorkQueries() ([]string, error) {
 
 // PerformDorkSearch performs a Google dork search for each query
 func PerformDorkSearch(domain string, queries []string) []string {
-	client := &http.Client{}
+	client := &http.Client{Timeout: 10 * time.Second}
 	var results []string
 
 	for _, query := range queries {
@@ -58,10 +59,9 @@ func PerformDorkSearch(domain string, queries []string) []string {
 			results = append(results, fmt.Sprintf("Query: %s - Error: %v", query, err))
 			continue
 		}
+		defer resp.Body.Close()
 
 		results = append(results, fmt.Sprintf("Query: %s\nURL: %s", processedQuery, searchURL))
-		resp.Body.Close()
-
 	}
 
 	return results

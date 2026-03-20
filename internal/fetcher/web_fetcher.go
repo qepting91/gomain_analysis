@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 )
 
 type WebFetcher struct {
@@ -13,7 +14,9 @@ type WebFetcher struct {
 
 func NewWebFetcher() *WebFetcher {
 	return &WebFetcher{
-		client: &http.Client{},
+		client: &http.Client{
+			Timeout: 30 * time.Second,
+		},
 	}
 }
 
