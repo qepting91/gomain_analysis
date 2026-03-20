@@ -102,7 +102,11 @@ func lookupASNHackerTarget(ip string) (*ASNInfo, error) {
 	}
 
 	// Now get IP ranges for this ASN
-	info.IPRanges, _ = getASNIPRanges(info.ASN)
+	ranges, err := getASNIPRanges(info.ASN)
+	if err != nil {
+		log.Printf("Warning: failed to get IP ranges for %s: %v", info.ASN, err)
+	}
+	info.IPRanges = ranges
 
 	log.Printf("[+] ASN discovered: %s (%s) - %d IP ranges", info.ASN, info.Name, len(info.IPRanges))
 	return info, nil

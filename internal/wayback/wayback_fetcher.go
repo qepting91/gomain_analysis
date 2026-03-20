@@ -233,7 +233,11 @@ func GetOldestSnapshot(targetURL string) *Snapshot {
 	fullURL := cdxURL + "?" + params.Encode()
 
 	client := &http.Client{Timeout: 15 * time.Second}
-	req, _ := http.NewRequest("GET", fullURL, http.NoBody)
+	req, err := http.NewRequest("GET", fullURL, http.NoBody)
+	if err != nil {
+		log.Printf("[-] Failed to create request: %v", err)
+		return nil
+	}
 	req.Header.Set("User-Agent", "gomain_analysis/1.0")
 
 	resp, err := client.Do(req)
@@ -242,7 +246,11 @@ func GetOldestSnapshot(targetURL string) *Snapshot {
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("[-] Failed to read response: %v", err)
+		return nil
+	}
 
 	var cdxData CDXResponse
 	if err := json.Unmarshal(body, &cdxData); err != nil {
@@ -278,7 +286,11 @@ func GetNewestSnapshot(targetURL string) *Snapshot {
 	fullURL := cdxURL + "?" + params.Encode()
 
 	client := &http.Client{Timeout: 15 * time.Second}
-	req, _ := http.NewRequest("GET", fullURL, http.NoBody)
+	req, err := http.NewRequest("GET", fullURL, http.NoBody)
+	if err != nil {
+		log.Printf("[-] Failed to create request: %v", err)
+		return nil
+	}
 	req.Header.Set("User-Agent", "gomain_analysis/1.0")
 
 	resp, err := client.Do(req)
@@ -287,7 +299,11 @@ func GetNewestSnapshot(targetURL string) *Snapshot {
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("[-] Failed to read response: %v", err)
+		return nil
+	}
 
 	var cdxData CDXResponse
 	if err := json.Unmarshal(body, &cdxData); err != nil {

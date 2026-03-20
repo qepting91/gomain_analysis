@@ -139,20 +139,22 @@ func GeneratePDFReport(data *ReportData) error {
 	// --- SSL/TLS Certificates ---
 	pdf.AddPage()
 	addSectionHeader(pdf, "4. Live SSL/TLS Certificates")
-	
+
 	var liveCerts []CertData
 	var historyCerts []CertData
-	
-	for _, cert := range data.Certificates {
+
+	for i := range data.Certificates {
+		cert := &data.Certificates[i]
 		if cert.Source == "CT LOG (HISTORY)" {
-			historyCerts = append(historyCerts, cert)
+			historyCerts = append(historyCerts, *cert)
 		} else {
-			liveCerts = append(liveCerts, cert)
+			liveCerts = append(liveCerts, *cert)
 		}
 	}
 
 	if len(liveCerts) > 0 {
-		for i, cert := range liveCerts {
+		for i := range liveCerts {
+			cert := &liveCerts[i]
 			pdf.SetFont("Arial", "B", 10)
 			pdf.SetFillColor(240, 240, 240)
 			title := fmt.Sprintf("Certificate #%d [%s]", i+1, cert.Source)
@@ -195,7 +197,8 @@ func GeneratePDFReport(data *ReportData) error {
 		pdf.SCellFormat(130, 7, "Issuer Authority", "1", 1, "C", true, 0, "")
 
 		pdf.SetFont("Arial", "", 8)
-		for _, cert := range historyCerts {
+		for i := range historyCerts {
+			cert := &historyCerts[i]
 			issuer := cert.Issuer
 			if len(issuer) > 70 {
 				issuer = issuer[:67] + "..."

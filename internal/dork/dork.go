@@ -59,9 +59,9 @@ func PerformDorkSearch(domain string, queries []string) []string {
 			results = append(results, fmt.Sprintf("Query: %s - Error: %v", query, err))
 			continue
 		}
-		defer resp.Body.Close()
 
 		results = append(results, fmt.Sprintf("Query: %s\nURL: %s", processedQuery, searchURL))
+		resp.Body.Close()
 	}
 
 	return results

@@ -201,7 +201,7 @@ func checkThreatFox(domain string, ips []string) []ThreatFoxIOC {
 
 // queryThreatFoxIOC performs the actual ThreatFox API query
 func queryThreatFoxIOC(apiURL, iocType, value string) []ThreatFoxIOC {
-	payload := fmt.Sprintf(`{"query":"search_ioc","search_term":"%s"}`, value)
+	payload := fmt.Sprintf(`{"query":"search_ioc","search_term":%q}`, value)
 
 	req, err := http.NewRequest("POST", apiURL, strings.NewReader(payload))
 	if err != nil {

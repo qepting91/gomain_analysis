@@ -30,7 +30,7 @@ type SecretMatch struct {
 }
 
 // AnalyzeJavaScript extracts intelligence from JavaScript files
-func AnalyzeJavaScript(htmlContent string, baseURL string) (*JSAnalysisResult, error) {
+func AnalyzeJavaScript(htmlContent, baseURL string) (*JSAnalysisResult, error) {
 	result := &JSAnalysisResult{}
 
 	log.Println("[*] Analyzing JavaScript files...")
@@ -88,7 +88,7 @@ func analyzeJSContent(jsCode, sourceFile string, result *JSAnalysisResult) {
 	// 1. Extract API endpoints (common patterns)
 	apiPatterns := []*regexp.Regexp{
 		regexp.MustCompile(`["'](/api/[^"'\s]+)["']`),                        // /api/...
-		regexp.MustCompile(`["'](/v[0-9]/[^"'\s]+)["']`),                     // /v1/..., /v2/...
+		regexp.MustCompile(`["'](/v\d/[^"'\s]+)["']`),                     // /v1/..., /v2/...
 		regexp.MustCompile(`["'](https?://[^"'\s]+/api[^"'\s]*)["']`),        // Full API URLs
 		regexp.MustCompile(`["'](https?://[^"'\s]+/graphql[^"'\s]*)["']`),    // GraphQL endpoints
 		regexp.MustCompile(`fetch\(["']([^"']+)["']`),                        // fetch() calls
@@ -114,7 +114,7 @@ func analyzeJSContent(jsCode, sourceFile string, result *JSAnalysisResult) {
 		pattern *regexp.Regexp
 	}{
 		{"api_key", regexp.MustCompile(`(?i)api[_-]?key['"]\s*[:=]\s*['"]([a-zA-Z0-9_\-]{20,})['"]`)},
-		{"token", regexp.MustCompile(`(?i)token['"]\s*[:=]\s*['"]([a-zA-Z0-9_\-\.]{20,})['"]`)},
+		{"token", regexp.MustCompile(`(?i)token['"]\s*[:=]\s*['"]([a-zA-Z0-9_\-.]{20,})['"]`)},
 		{"jwt", regexp.MustCompile(`eyJ[a-zA-Z0-9_-]*\.eyJ[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*`)},
 		{"aws_key", regexp.MustCompile(`(?i)AKIA[0-9A-Z]{16}`)},
 		{"aws_secret", regexp.MustCompile(`(?i)aws[_-]?secret['"]\s*[:=]\s*['"]([a-zA-Z0-9/+=]{40})['"]`)},
@@ -128,30 +128,31 @@ func analyzeJSContent(jsCode, sourceFile string, result *JSAnalysisResult) {
 	for _, secretType := range secretPatterns {
 		matches := secretType.pattern.FindAllStringSubmatch(jsCode, -1)
 		for _, match := range matches {
-			if len(match) > 0 {
-				value := match[0]
-				if len(match) > 1 && match[1] != "" {
-					value = match[1]
-				}
-
-				// Get context (50 chars before and after)
-				index := strings.Index(jsCode, value)
-				context := ""
-				if index > 0 {
-					start := max(0, index-50)
-					end := min(len(jsCode), index+len(value)+50)
-					context = jsCode[start:end]
-				}
-
-				result.PotentialSecrets = append(result.PotentialSecrets, SecretMatch{
-					Type:    secretType.name,
-					Value:   value,
-					Context: context,
-					File:    sourceFile,
-				})
-
-				log.Printf("[!!!] Potential %s found in %s: %s...", secretType.name, sourceFile, value[:min(20, len(value))])
+			if len(match) == 0 {
+				continue
 			}
+			value := match[0]
+			if len(match) > 1 && match[1] != "" {
+				value = match[1]
+			}
+
+			// Get context (50 chars before and after)
+			index := strings.Index(jsCode, value)
+			context := ""
+			if index >= 0 {
+				start := max(0, index-50)
+				end := min(len(jsCode), index+len(value)+50)
+				context = jsCode[start:end]
+			}
+
+			result.PotentialSecrets = append(result.PotentialSecrets, SecretMatch{
+				Type:    secretType.name,
+				Value:   value,
+				Context: context,
+				File:    sourceFile,
+			})
+
+			log.Printf("[!!!] Potential %s found in %s: %s...", secretType.name, sourceFile, value[:min(20, len(value))])
 		}
 	}
 
@@ -190,7 +191,7 @@ func analyzeJSContent(jsCode, sourceFile string, result *JSAnalysisResult) {
 
 	// 6. Check for source maps
 	if strings.Contains(jsCode, "sourceMappingURL") {
-		sourceMapRegex := regexp.MustCompile(`sourceMappingURL=([^\s]+)`)
+		sourceMapRegex := regexp.MustCompile(`sourceMappingURL=(\S+)`)
 		smMatches := sourceMapRegex.FindAllStringSubmatch(jsCode, -1)
 		for _, match := range smMatches {
 			if len(match) > 1 {
@@ -264,21 +265,6 @@ func uniqueStrings(slice []string) []string {
 	}
 
 	return result
-}
-
-// Helper functions
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 // GetCriticalFindings returns only high-severity findings

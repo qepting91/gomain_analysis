@@ -25,6 +25,13 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		log.Printf("Application error: %v", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	if err := geolite.Initialize(); err != nil {
 		log.Printf("WARNING: GeoLite2 initialization failed (geolocation will be skipped): %v", err)
 	}
@@ -84,8 +91,14 @@ func main() {
 						log.Printf("Found %d historical certificates", len(historicalCerts))
 						for _, ct := range historicalCerts {
 							// Example format: 2026-01-26T11:25:44
-							notBefore, _ := time.Parse("2006-01-02T15:04:05", ct.NotBefore)
-							notAfter, _ := time.Parse("2006-01-02T15:04:05", ct.NotAfter)
+							notBefore, errBefore := time.Parse("2006-01-02T15:04:05", ct.NotBefore)
+							if errBefore != nil {
+								notBefore = time.Time{}
+							}
+							notAfter, errAfter := time.Parse("2006-01-02T15:04:05", ct.NotAfter)
+							if errAfter != nil {
+								notAfter = time.Time{}
+							}
 
 							dnsNames := strings.Split(ct.NameValue, "\n")
 							for i, n := range dnsNames {
@@ -286,8 +299,5 @@ func main() {
 		},
 	}
 
-	if err := app.Run(os.Args); err != nil {
-		log.Printf("Application error: %v", err)
-		os.Exit(1)
-	}
+	return app.Run(os.Args)
 }

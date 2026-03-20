@@ -47,7 +47,7 @@ func AnalyzeSecurityHeaders(targetURL string) (*HeaderAnalysis, error) {
 		Timeout: 15 * time.Second,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true, // For testing, we want to connect even with bad certs
+				InsecureSkipVerify: true, // #nosec G402 - For testing, we want to connect even with bad certs
 			},
 		},
 	}
