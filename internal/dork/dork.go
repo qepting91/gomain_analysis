@@ -39,12 +39,12 @@ func PerformDorkSearch(domain string, queries []string) []string {
 
 	for _, query := range queries {
 		// Replace the domain placeholder with actual domain
-		processedQuery := strings.Replace(query, "{domain}", domain, -1)
+		processedQuery := strings.ReplaceAll(query, "{domain}", domain)
 		// URL encode the processed query
 		encodedQuery := url.QueryEscape(processedQuery)
 		searchURL := fmt.Sprintf("https://www.google.com/search?q=%s", encodedQuery)
 
-		req, err := http.NewRequest("GET", searchURL, nil)
+		req, err := http.NewRequest("GET", searchURL, http.NoBody)
 		if err != nil {
 			results = append(results, fmt.Sprintf("Query: %s - Error: %v", query, err))
 			continue

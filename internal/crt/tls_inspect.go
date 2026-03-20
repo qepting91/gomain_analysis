@@ -11,7 +11,7 @@ import (
 
 // InspectTLS performs a direct TLS handshake with the given domain
 // and returns the live certificate chain provided by the server.
-func InspectTLS(domain string, port string) ([]*x509.Certificate, error) {
+func InspectTLS(domain, port string) ([]*x509.Certificate, error) {
 	if port == "" {
 		port = "443"
 	}
@@ -21,6 +21,7 @@ func InspectTLS(domain string, port string) ([]*x509.Certificate, error) {
 	config := &tls.Config{
 		ServerName: domain,
 		// We want to fetch the cert even if it's expired or untrusted
+		/* #nosec G402 */ // Intentional for OSINT tool
 		InsecureSkipVerify: true, 
 	}
 

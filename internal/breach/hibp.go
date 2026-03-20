@@ -38,7 +38,7 @@ func CheckEmails(emails []string) map[string][]string {
 		}
 
 		url := fmt.Sprintf("https://haveibeenpwned.com/api/v3/breachedaccount/%s?truncateResponse=false", email)
-		req, err := http.NewRequest("GET", url, nil)
+		req, err := http.NewRequest("GET", url, http.NoBody)
 		if err != nil {
 			log.Printf("Failed to create HIBP request for %s: %v", email, err)
 			continue

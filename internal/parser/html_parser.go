@@ -54,13 +54,14 @@ func ParseHTMLContent(html string) (*ParsedContent, error) {
 		if exists {
 			parsed.Links = append(parsed.Links, href)
 
-			if strings.Contains(href, "mailto:") {
+			switch {
+			case strings.Contains(href, "mailto:"):
 				email := strings.TrimPrefix(href, "mailto:")
 				parsed.Emails = append(parsed.Emails, email)
-			} else if strings.Contains(href, "tel:") {
+			case strings.Contains(href, "tel:"):
 				phone := strings.TrimPrefix(href, "tel:")
 				parsed.PhoneNumbers = append(parsed.PhoneNumbers, phone)
-			} else if isExternalLink(href) {
+			case isExternalLink(href):
 				parsed.ExternalLinks = append(parsed.ExternalLinks, href)
 
 				// Detect social media links
@@ -69,7 +70,7 @@ func ParseHTMLContent(html string) (*ParsedContent, error) {
 						parsed.SocialMedia[platform] = append(parsed.SocialMedia[platform], href)
 					}
 				}
-			} else {
+			default:
 				parsed.InternalLinks = append(parsed.InternalLinks, href)
 			}
 		}

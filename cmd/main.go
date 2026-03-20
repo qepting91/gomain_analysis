@@ -24,14 +24,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// Helper function to format social media links
-func formatSocialMedia(socialMedia map[string][]string) string {
-	var result strings.Builder
-	for platform, links := range socialMedia {
-		fmt.Fprintf(&result, "• %s: %s\n", platform, strings.Join(links, ", "))
-	}
-	return result.String()
-}
 
 func main() {
 	if err := geolite.Initialize(); err != nil {

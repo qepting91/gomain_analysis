@@ -19,7 +19,7 @@ func GenerateJSONReport(data *ReportData) error {
 		return fmt.Errorf("failed to marshal report data to JSON: %v", err)
 	}
 
-	err = os.WriteFile(outputFile, jsonData, 0644)
+	err = os.WriteFile(outputFile, jsonData, 0600)
 	if err != nil {
 		return fmt.Errorf("failed to write JSON report file: %v", err)
 	}

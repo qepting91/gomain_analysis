@@ -230,15 +230,16 @@ func GeneratePDFReport(data *ReportData) error {
 	pdf.SCell(0, 8, "VirusTotal Community Scoring:")
 	pdf.Ln(8)
 	pdf.SetFont("Arial", "", 10)
-	if data.MaliciousScore > 0 {
+	switch {
+	case data.MaliciousScore > 0:
 		pdf.SetTextColor(200, 0, 0) // Red warning
 		pdf.SCell(0, 6, fmt.Sprintf("WARNING: Domain flagged as malicious by %d security vendors.", data.MaliciousScore))
 		pdf.Ln(6)
-	} else if data.VT_Tags != nil {
+	case data.VT_Tags != nil:
 		pdf.SetTextColor(0, 128, 0) // Green
 		pdf.SCell(0, 6, "Clean: 0 malicious vendor detections.")
 		pdf.Ln(6)
-	} else {
+	default:
 		pdf.SetTextColor(128, 128, 128)
 		pdf.SCell(0, 6, "VirusTotal check skipped (VT_API_KEY absent).")
 		pdf.Ln(6)
@@ -255,7 +256,8 @@ func GeneratePDFReport(data *ReportData) error {
 	pdf.SCell(0, 8, "Identity & Credential Breaches (HaveIBeenPwned):")
 	pdf.Ln(8)
 	pdf.SetFont("Arial", "", 10)
-	if len(data.BreachedEmails) > 0 {
+	switch {
+	case len(data.BreachedEmails) > 0:
 		for email, breaches := range data.BreachedEmails {
 			pdf.SetTextColor(200, 0, 0) // Red
 			pdf.SCell(0, 6, "[COMPROMISED] " + email)
@@ -264,13 +266,13 @@ func GeneratePDFReport(data *ReportData) error {
 			pdf.SCell(0, 6, "Found in breaches: " + strings.Join(breaches, ", "))
 			pdf.Ln(8)
 		}
-	} else if data.WebAnalysis != nil && len(data.WebAnalysis.Emails) > 0 && data.VT_Tags != nil {
+	case data.WebAnalysis != nil && len(data.WebAnalysis.Emails) > 0 && data.VT_Tags != nil:
 		// If VT tags isn't nil, we ran the passive checks. Just a rough heuristic.
 		pdf.SetTextColor(0, 128, 0)
 		pdf.SCell(0, 6, "Clean: 0 extracted emails were found in known data breaches.")
 		pdf.SetTextColor(0, 0, 0)
 		pdf.Ln(8)
-	} else {
+	default:
 		pdf.SetTextColor(128, 128, 128)
 		pdf.SCell(0, 6, "No credential breaches found or check skipped.")
 		pdf.SetTextColor(0, 0, 0)
